@@ -150,6 +150,24 @@ body {
 }
 .record-label { font-size: 12px; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 14px; }
 
+/* KEYWORD TAGS */
+.kw-tag {
+  border-radius: 4px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-family: var(--mono);
+  transition: all 0.3s;
+  opacity: 0.4;
+}
+.kw-gold { background: rgba(200,169,110,0.12); color: var(--accent); }
+.kw-teal { background: rgba(126,184,164,0.12); color: var(--accent2); }
+.kw-tag.lit {
+  opacity: 1;
+  transform: scale(1.08);
+  box-shadow: 0 0 8px rgba(200,169,110,0.4);
+}
+.kw-teal.lit { box-shadow: 0 0 8px rgba(126,184,164,0.4); }
+
 /* VUMETRE */
 .vumeter {
   display: none;
@@ -515,7 +533,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ffffff;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#9955ff;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -559,6 +577,21 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
           <div class="vu-bar" id="vb6"></div><div class="vu-bar" id="vb7"></div>
           <div class="vu-bar" id="vb8"></div><div class="vu-bar" id="vb9"></div>
           <div class="vu-bar" id="vb10"></div><div class="vu-bar" id="vb11"></div>
+        </div>
+      </div>
+      <div style="margin-top:16px;padding:12px 16px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;text-align:left;max-width:400px;margin-left:auto;margin-right:auto">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">Aide-mémoire dictée</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <span id="kw_intervention" class="kw-tag kw-gold">intervention</span>
+          <span id="kw_fourniture"   class="kw-tag kw-gold">fourniture</span>
+          <span id="kw_cout"         class="kw-tag kw-gold">coût … euros</span>
+          <span id="kw_lieu"         class="kw-tag kw-gold">dans … (lieu)</span>
+          <span id="kw_unite"        class="kw-tag kw-teal">unité / logement</span>
+          <span id="kw_ponctuel"     class="kw-tag kw-teal">ponctuel</span>
+          <span id="kw_global"       class="kw-tag kw-teal">global</span>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--text3);line-height:1.5">
+          Ex : <em style="color:var(--text2)">"J'ai changé le mitigeur dans la salle de bain, fourniture tête de mitigeur, coût 25 euros"</em>
         </div>
       </div>
     </div>
@@ -945,6 +978,8 @@ function setupRecognition() {
   recognition.continuous = false;
   recognition.interimResults = false;
 
+  let silenceTimer = null;
+
   recognition.onresult = (e) => {
     let txt = '';
     for (let i = 0; i < e.results.length; i++) {
@@ -952,6 +987,16 @@ function setupRecognition() {
     }
     const box = document.getElementById('transcriptBox');
     box.textContent = (box.textContent + ' ' + txt).trim();
+    highlightKeywords(box.textContent);
+    // Reset silence timer — 5 secondes
+    if (silenceTimer) clearTimeout(silenceTimer);
+    silenceTimer = setTimeout(() => {
+      if (isRecording) {
+        userStoppedRecording = true;
+        isRecording = false;
+        recognition.stop();
+      }
+    }, 5000);
   };
 
   recognition.onend = () => {
@@ -971,6 +1016,31 @@ function setupRecognition() {
     stopVumeter();
     setRecordIdle();
   };
+}
+
+function highlightKeywords(txt) {
+  const lower = txt.toLowerCase();
+  const map = {
+    kw_intervention: ['intervention','réparé','changé','installé','remplacé','posé','fixé','nettoyé'],
+    kw_fourniture:   ['fourniture','matériau','acheté','pièce'],
+    kw_cout:         ['euro','coût','coute','coûte','prix'],
+    kw_lieu:         ['dans','salle','chambre','cuisine','couloir','garage','cave','grenier','wc','toilette','bureau'],
+    kw_unite:        ['appartement','appt','logement','unité','habitation','studio','chambre'],
+    kw_ponctuel:     ['ponctuel','précis','spécifique'],
+    kw_global:       ['global','tout','ensemble','partout','toute']
+  };
+  Object.entries(map).forEach(([id, keywords]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const found = keywords.some(k => lower.includes(k));
+    if (found) el.classList.add('lit');
+    else el.classList.remove('lit');
+  });
+}
+
+function resetKeywords() {
+  ['kw_intervention','kw_fourniture','kw_cout','kw_lieu','kw_unite','kw_ponctuel','kw_global']
+    .forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('lit'); });
 }
 
 function setRecordIdle() {
@@ -1004,11 +1074,14 @@ function toggleRecording() {
     userStoppedRecording = false;
     document.getElementById('transcriptBox').textContent = '';
     document.getElementById('transcriptWrap').style.display = 'none';
+    resetKeywords();
     try { recognition.start(); } catch(e) { return; }
     isRecording = true;
     document.getElementById('recordBtn').className = 'record-btn recording';
     document.getElementById('recordBtn').textContent = '⏹';
     document.getElementById('recordLabel').textContent = 'Enregistrement… (appuyer pour arrêter)';
+    // Toujours montrer la zone de transcription
+    document.getElementById('transcriptWrap').style.display = 'block';
     startVumeter();
   }
 }
@@ -1135,6 +1208,11 @@ function cancelEntry() {
   document.getElementById('fUnite').value = '';
   portee = 'ponctuel';
   setPortee('ponctuel');
+  // Remettre le bouton micro en état initial
+  setRecordIdle();
+  isRecording = false;
+  userStoppedRecording = false;
+  stopVumeter();
 }
 
 // ═══════════════════════════════════════════
