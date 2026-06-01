@@ -1125,10 +1125,8 @@ function addRappel() {
 
 function addRappelByVoice() {
   if (!recognition) { notify('Dictée non disponible'); return; }
-  showTab({target: document.querySelector('[onclick="showTab(\'rappels\')"]")}'});
-  // Just focus on desc field
   document.getElementById('rDesc').focus();
-  notify('🎙 Dictez dans le champ Description');
+  notify('Dictez dans le champ Description');
 }
 
 function toggleRappel(id) {
