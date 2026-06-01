@@ -515,7 +515,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ff6600;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ffffff;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -931,6 +931,7 @@ let audioCtx = null;
 let analyser = null;
 let vuStream = null;
 let vuAnimFrame = null;
+let userStoppedRecording = false;
 
 function setupRecognition() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -942,59 +943,72 @@ function setupRecognition() {
   recognition = new SR();
   recognition.lang = 'fr-FR';
   recognition.continuous = false;
-  recognition.interimResults = true;
-  let finalTranscript = '';
+  recognition.interimResults = false;
+
   recognition.onresult = (e) => {
     let txt = '';
-    for (let i=0; i<e.results.length; i++) txt += e.results[i][0].transcript;
-    finalTranscript = txt;
-    document.getElementById('transcriptBox').textContent = txt;
+    for (let i = 0; i < e.results.length; i++) {
+      if (e.results[i].isFinal) txt += e.results[i][0].transcript + ' ';
+    }
+    const box = document.getElementById('transcriptBox');
+    box.textContent = (box.textContent + ' ' + txt).trim();
   };
+
   recognition.onend = () => {
-    if (!isRecording) return; // arrêt volontaire
-    // Sur iOS, onend se déclenche après silence — on relance si toujours en mode enregistrement
-    if (isRecording) {
-      try { recognition.start(); } catch(e) {}
+    if (userStoppedRecording) {
+      // Arrêt volontaire — finaliser
+      finishRecording();
+    } else if (isRecording) {
+      // iOS a coupé automatiquement — relancer
+      try { recognition.start(); } catch(e) { finishRecording(); }
     }
   };
+
   recognition.onerror = (e) => {
     if (e.error === 'aborted') return;
     isRecording = false;
+    userStoppedRecording = false;
     stopVumeter();
-    document.getElementById('recordBtn').className = 'record-btn';
-    document.getElementById('recordBtn').textContent = '🎙';
-    document.getElementById('recordLabel').textContent = 'Appuyer pour dicter';
+    setRecordIdle();
   };
 }
 
+function setRecordIdle() {
+  document.getElementById('recordBtn').className = 'record-btn';
+  document.getElementById('recordBtn').textContent = '🎙';
+  document.getElementById('recordLabel').textContent = 'Appuyer pour dicter';
+}
+
+function finishRecording() {
+  isRecording = false;
+  userStoppedRecording = false;
+  stopVumeter();
+  setRecordIdle();
+  const txt = document.getElementById('transcriptBox').textContent.trim();
+  if (txt) {
+    parseTranscript(txt);
+    document.getElementById('transcriptWrap').style.display = 'block';
+    checkPortee(txt);
+  }
+}
+
 function toggleRecording() {
-  if (!recognition) { notify('⚠️ Dictée non disponible sur ce navigateur'); return; }
+  if (!recognition) { notify('Dictée non disponible sur ce navigateur'); return; }
   if (isRecording) {
+    // Arrêt volontaire
+    userStoppedRecording = true;
     isRecording = false;
     recognition.stop();
-    stopVumeter();
-    document.getElementById('recordBtn').className = 'record-btn';
-    document.getElementById('recordBtn').textContent = '🎙';
-    document.getElementById('recordLabel').textContent = 'Appuyer pour dicter';
-    setTimeout(() => {
-      const txt = document.getElementById('transcriptBox').textContent.trim();
-      if (txt) {
-        parseTranscript(txt);
-        document.getElementById('transcriptWrap').style.display = 'block';
-        checkPortee(txt);
-      }
-    }, 300);
-    return;
   } else {
+    // Démarrage
+    userStoppedRecording = false;
     document.getElementById('transcriptBox').textContent = '';
     document.getElementById('transcriptWrap').style.display = 'none';
-    // Démarrer reconnaissance IMMÉDIATEMENT (requis par Safari iOS)
-    try { recognition.start(); } catch(e) {}
+    try { recognition.start(); } catch(e) { return; }
     isRecording = true;
     document.getElementById('recordBtn').className = 'record-btn recording';
     document.getElementById('recordBtn').textContent = '⏹';
     document.getElementById('recordLabel').textContent = 'Enregistrement… (appuyer pour arrêter)';
-    // Vumètre en parallèle (non bloquant)
     startVumeter();
   }
 }
