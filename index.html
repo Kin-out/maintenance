@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carnet de Maintenance</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg: #0f0f0d;
+  --surface: #1a1a16;
+  --surface2: #222220;
+  --border: #2e2e28;
+  --accent: #c8a96e;
+  --accent2: #7eb8a4;
+  --danger: #c47a6a;
+  --text: #e8e4d8;
+  --text2: #8a8678;
+  --text3: #5a5850;
+  --radius: 10px;
+  --mono: 'DM Mono', monospace;
+  --serif: 'DM Serif Display', serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--mono);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+}
+/* HEADER */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.app-title {
+  font-family: var(--serif);
+  font-size: 20px;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+.geo-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text2);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 14px;
+}
+.geo-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--text3);
+  transition: background 0.3s;
+}
+.geo-dot.active { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+.geo-dot.unknown { background: var(--accent); }
+
+/* TABS */
+.tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  overflow-x: auto;
+}
+.tab {
+  padding: 12px 20px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--text2); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* MAIN */
+.main { padding: 24px; max-width: 900px; margin: 0 auto; }
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* CARDS */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.card-title {
+  font-family: var(--serif);
+  font-size: 16px;
+  color: var(--accent);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* RECORD BUTTON */
+.record-zone {
+  text-align: center;
+  padding: 32px 20px;
+}
+.record-btn {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-size: 28px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+.record-btn:hover { background: rgba(200,169,110,0.1); transform: scale(1.05); }
+.record-btn.recording {
+  background: rgba(196,122,106,0.15);
+  border-color: var(--danger);
+  color: var(--danger);
+  animation: pulse 1.2s infinite;
+}
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(196,122,106,0.4); }
+  50% { box-shadow: 0 0 0 12px rgba(196,122,106,0); }
+}
+.record-label { font-size: 12px; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* TRANSCRIPT */
+.transcript-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  min-height: 80px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.6;
+  outline: none;
+  width: 100%;
+  resize: vertical;
+  margin-bottom: 16px;
+}
+.transcript-box:focus { border-color: var(--accent); }
+.transcript-box[placeholder]:empty:before {
+  content: attr(placeholder);
+  color: var(--text3);
+}
+
+/* PARSED FIELDS */
+.parsed-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+@media(max-width:600px){ .parsed-grid { grid-template-columns: 1fr; } }
+.field-group { display: flex; flex-direction: column; gap: 4px; }
+.field-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+.field-input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  outline: none;
+  width: 100%;
+}
+.field-input:focus { border-color: var(--accent); }
+select.field-input { cursor: pointer; }
+
+/* BUTTONS */
+.btn {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+.btn-primary { background: var(--accent); color: var(--bg); }
+.btn-primary:hover { background: #d4b87a; }
+.btn-secondary {
+  background: transparent;
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { border-color: var(--text2); color: var(--text); }
+.btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+.btn-danger:hover { background: rgba(196,122,106,0.1); }
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* PORTEE */
+.portee-select {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.portee-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-family: var(--mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.portee-btn.active { border-color: var(--accent2); color: var(--accent2); background: rgba(126,184,164,0.08); }
+
+/* TIMER */
+.timer-banner {
+  background: rgba(200,169,110,0.08);
+  border: 1px solid rgba(200,169,110,0.3);
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.timer-display {
+  font-family: var(--serif);
+  font-size: 28px;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+}
+.timer-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* TABLE */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text3);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(46,46,40,0.5);
+  color: var(--text2);
+  vertical-align: top;
+}
+tr:hover td { background: var(--surface2); color: var(--text); }
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.badge-global { background: rgba(126,184,164,0.15); color: var(--accent2); }
+.badge-ponctuel { background: rgba(200,169,110,0.15); color: var(--accent); }
+
+/* TODO */
+.todo-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+  transition: all 0.2s;
+}
+.todo-item.done { opacity: 0.4; }
+.todo-check {
+  width: 20px; height: 20px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  margin-top: 2px;
+}
+.todo-check.checked { background: var(--accent2); border-color: var(--accent2); }
+.todo-content { flex: 1; }
+.todo-title { color: var(--text); font-size: 13px; margin-bottom: 4px; }
+.todo-meta { font-size: 11px; color: var(--text3); }
+.todo-delete { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 16px; padding: 2px 6px; }
+.todo-delete:hover { color: var(--danger); }
+
+/* STATS */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+}
+.stat-val {
+  font-family: var(--serif);
+  font-size: 32px;
+  color: var(--accent);
+  display: block;
+}
+.stat-lbl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+
+/* SETTINGS */
+.prop-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.prop-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+.prop-name { color: var(--text); font-size: 13px; font-weight: 500; }
+.prop-addr { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.prop-body { margin-top: 12px; display: none; }
+.prop-body.open { display: block; }
+.unit-list { list-style: none; margin-bottom: 10px; }
+.unit-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--surface);
+  border-radius: 4px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: var(--text2);
+}
+.add-row { display: flex; gap: 8px; margin-top: 8px; }
+.add-row input { flex: 1; }
+
+/* VISITE */
+.visite-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.visite-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.visite-prop { font-family: var(--serif); font-size: 15px; color: var(--accent); }
+.visite-date { font-size: 12px; color: var(--text3); }
+.task-checklist { list-style: none; }
+.task-checklist li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text2);
+}
+.task-checklist li:last-child { border-bottom: none; }
+.motif-select {
+  font-size: 11px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text2);
+  padding: 2px 6px;
+  font-family: var(--mono);
+  outline: none;
+}
+
+/* NOTIFICATION */
+.notif {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  color: var(--text);
+  font-size: 13px;
+  z-index: 999;
+  transform: translateY(80px);
+  opacity: 0;
+  transition: all 0.3s;
+  max-width: 320px;
+}
+.notif.show { transform: translateY(0); opacity: 1; }
+
+/* DEPARTURE MODAL */
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  display: none;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.modal-title {
+  font-family: var(--serif);
+  font-size: 18px;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+
+/* ICS */
+.ics-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+.ics-info { font-size: 12px; color: var(--text2); }
+.ics-prop { font-size: 13px; color: var(--text); margin-bottom: 2px; }
+
+hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+.empty-state { text-align: center; padding: 40px; color: var(--text3); font-size: 13px; }
+.section-title { font-family: var(--serif); font-size: 15px; color: var(--text2); margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-title">⚙ Carnet de Maintenance</div>
+  <div class="geo-badge">
+    <div class="geo-dot" id="geoDot"></div>
+    <span id="geoLabel">Localisation...</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('saisie')">Saisie</button>
+  <button class="tab" onclick="showTab('rappels')">Rappels</button>
+  <button class="tab" onclick="showTab('visites')">Préparer visite</button>
+  <button class="tab" onclick="showTab('historique')">Historique</button>
+  <button class="tab" onclick="showTab('efficacite')">Efficacité</button>
+  <button class="tab" onclick="showTab('proprietes')">Propriétés</button>
+</div>
+
+<div class="main">
+
+<!-- ═══════════ SAISIE ═══════════ -->
+<div class="panel active" id="panel-saisie">
+
+  <div id="timerBanner" style="display:none" class="timer-banner">
+    <div>
+      <div class="timer-label">⏱ Temps sur site — Compiègne</div>
+      <div class="timer-display" id="timerDisplay">00:00:00</div>
+    </div>
+    <button class="btn btn-secondary" onclick="stopTimer()">Arrêter</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🎙 Nouvelle intervention</div>
+
+    <div class="record-zone">
+      <button class="record-btn" id="recordBtn" onclick="toggleRecording()">🎙</button>
+      <div class="record-label" id="recordLabel">Appuyer pour dicter</div>
+    </div>
+
+    <div id="transcriptWrap" style="display:none">
+      <div
+        class="transcript-box"
+        id="transcriptBox"
+        contenteditable="true"
+        placeholder="La transcription apparaît ici — vous pouvez corriger..."
+      ></div>
+
+      <div class="portee-select">
+        <button class="portee-btn active" id="portPonct" onclick="setPortee('ponctuel')">📍 Ponctuel (pièce précise)</button>
+        <button class="portee-btn" id="portGlob" onclick="setPortee('global')">🏠 Global (toute l'habitation)</button>
+      </div>
+
+      <div class="parsed-grid">
+        <div class="field-group">
+          <label class="field-label">Propriété</label>
+          <select class="field-input" id="fProp"></select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Unité / Logement</label>
+          <input class="field-input" id="fUnite" placeholder="ex: Appt 3, Chambre 2…">
+        </div>
+        <div class="field-group" id="fLieuGroup">
+          <label class="field-label">Lieu précis</label>
+          <input class="field-input" id="fLieu" placeholder="ex: Salle de bain 1">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Intervention</label>
+          <input class="field-input" id="fIntervention" placeholder="ex: Changement mitigeur">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Fourniture</label>
+          <input class="field-input" id="fFourniture" placeholder="ex: Tête de mitigeur">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Coût (€)</label>
+          <input class="field-input" id="fCout" type="number" placeholder="0.00" step="0.01">
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveEntry()">💾 Sauvegarder</button>
+        <button class="btn btn-secondary" onclick="cancelEntry()">Annuler</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ RAPPELS ═══════════ -->
+<div class="panel" id="panel-rappels">
+  <div class="card">
+    <div class="card-title">➕ Ajouter un rappel</div>
+    <div class="parsed-grid">
+      <div class="field-group">
+        <label class="field-label">Propriété</label>
+        <select class="field-input" id="rProp"></select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Type</label>
+        <select class="field-input" id="rType">
+          <option value="outil">🔧 Outil à ramener</option>
+          <option value="travail">🏗 Travail à prévoir</option>
+          <option value="fourniture">📦 Fourniture à acheter</option>
+        </select>
+      </div>
+      <div class="field-group" style="grid-column: 1/-1">
+        <label class="field-label">Description</label>
+        <input class="field-input" id="rDesc" placeholder="ex: Clé à molette + scie sauteuse">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Emplacement des équipements</label>
+        <input class="field-input" id="rEmplacement" placeholder="ex: Atelier Jouet, caisse rouge">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="addRappel()">Ajouter</button>
+      <button class="btn btn-secondary" onclick="addRappelByVoice()">🎙 Dicter</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 Rappels actifs</div>
+    <div id="rappelList"><div class="empty-state">Aucun rappel pour l'instant</div></div>
+  </div>
+</div>
+
+<!-- ═══════════ PRÉPARER VISITE ═══════════ -->
+<div class="panel" id="panel-visites">
+  <div class="card">
+    <div class="card-title">🗓 Planifier un déplacement</div>
+    <div class="parsed-grid">
+      <div class="field-group">
+        <label class="field-label">Propriété</label>
+        <select class="field-input" id="vProp"></select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Date prévue</label>
+        <input class="field-input" type="date" id="vDate">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="planifierVisite()">Planifier + générer rappels .ics</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📅 Visites planifiées</div>
+    <div id="visiteList"><div class="empty-state">Aucune visite planifiée</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📥 Rappels .ics générés</div>
+    <div id="icsList"><div class="empty-state">Aucun fichier .ics généré</div></div>
+  </div>
+</div>
+
+<!-- ═══════════ HISTORIQUE ═══════════ -->
+<div class="panel" id="panel-historique">
+  <div class="card" style="padding:14px">
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center">
+      <select class="field-input" id="filtProp" style="width:auto" onchange="renderHistorique()">
+        <option value="">Toutes propriétés</option>
+      </select>
+      <input class="field-input" type="text" id="filtSearch" placeholder="Rechercher…" style="width:auto;flex:1" oninput="renderHistorique()">
+      <button class="btn btn-secondary" onclick="exportExcel()">⬇ Export Excel</button>
+    </div>
+  </div>
+  <div class="card" style="padding:0 20px 20px">
+    <div class="table-wrap">
+      <table id="histoTable">
+        <thead>
+          <tr>
+            <th>Date</th><th>Heure</th><th>Propriété</th><th>Unité</th>
+            <th>Lieu</th><th>Portée</th><th>Intervention</th><th>Fourniture</th><th>Coût €</th>
+          </tr>
+        </thead>
+        <tbody id="histoBody"></tbody>
+      </table>
+    </div>
+    <div id="histoEmpty" class="empty-state" style="display:none">Aucune entrée</div>
+  </div>
+</div>
+
+<!-- ═══════════ EFFICACITÉ ═══════════ -->
+<div class="panel" id="panel-efficacite">
+  <div class="stats-grid" id="statsGrid"></div>
+
+  <div class="card">
+    <div class="card-title">📊 Analyse par propriété</div>
+    <div id="efficaciteDetail"></div>
+  </div>
+</div>
+
+<!-- ═══════════ PROPRIÉTÉS ═══════════ -->
+<div class="panel" id="panel-proprietes">
+  <div class="card">
+    <div class="card-title">🏠 Mes propriétés</div>
+    <div id="propList"></div>
+    <hr class="divider">
+    <div class="section-title">Ajouter une propriété</div>
+    <div class="parsed-grid">
+      <div class="field-group">
+        <label class="field-label">Nom</label>
+        <input class="field-input" id="newPropName" placeholder="ex: Arcachon">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Adresse</label>
+        <input class="field-input" id="newPropAddr" placeholder="1 Place du Dr Peyneau, Arcachon">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Latitude</label>
+        <input class="field-input" id="newPropLat" type="number" step="0.000001">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Longitude</label>
+        <input class="field-input" id="newPropLng" type="number" step="0.000001">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="addPropriete()">Ajouter</button>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- MODAL DÉPART -->
+<div class="modal-bg" id="departModal">
+  <div class="modal">
+    <div class="modal-title">🚗 Vous quittez la propriété</div>
+    <div id="departPropName" style="color:var(--text2);font-size:13px;margin-bottom:16px"></div>
+    <div class="section-title">Tâches prévues — cochez ce qui a été fait</div>
+    <ul class="task-checklist" id="departList"></ul>
+    <hr class="divider">
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="validerDepart()">Valider & partir</button>
+      <button class="btn btn-secondary" onclick="closeDepart()">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// DONNÉES
+// ═══════════════════════════════════════════
+const DEFAULT_PROPS = [
+  { id:'comp',  name:'Compiègne',           addr:'505 Allée des Roses de Picardie, Margny-lès-Compiègne 60280', lat:49.4107, lng:2.8108,  units:['Habitation 1','Habitation 2','Habitation 3'], timer:true },
+  { id:'hey',   name:'Jouet — Cité Heymann',addr:'204 Cité Heymann, Jouet-sur-l\'Aubois 18320',               lat:47.1045, lng:2.9720,  units:['Habitation 1'], timer:false },
+  { id:'berry', name:'Jouet — Place de Berry',addr:'2 Place de Berry, Jouet-sur-l\'Aubois 18320',              lat:47.1050, lng:2.9725,  units:['Habitation 1','Habitation 2','Habitation 3','Habitation 4','Habitation 5','Habitation 6','Habitation 7'], timer:false },
+  { id:'creuse',name:'Jouet — Rue Creuse',  addr:'117 Rue Creuse, Jouet-sur-l\'Aubois 18320',                  lat:47.1040, lng:2.9730,  units:[], timer:false },
+  { id:'arcach',name:'Arcachon',            addr:'1 Place du Dr Peyneau, Arcachon 33120',                      lat:44.6611, lng:-1.1664, units:['Habitation principale'], timer:false },
+  { id:'paris', name:'Paris — Bagnolet',   addr:'24 Rue de Bagnolet, Paris 75020',                             lat:48.8545, lng:2.3980,  units:['Appt 1','Appt 2','Appt 3','Appt 4','Appt 5','Appt 6','Appt 7','Appt 8','Appt 9','Appt 10','Appt 11','Appt 12','Appt 13','Mag 1','Mag 2','Mag 3','Mag 4'], timer:false }
+];
+
+function load(key, def) {
+  try { const v=localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch(e){ return def; }
+}
+function save(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch(e){}
+}
+
+let proprietes = load('props', DEFAULT_PROPS);
+let entries    = load('entries', []);
+let rappels    = load('rappels', []);
+let visites    = load('visites', []);
+let validations= load('validations', []);
+
+let currentProp = null;
+let portee = 'ponctuel';
+let recognition = null;
+let isRecording = false;
+let timerInterval = null;
+let timerStart = null;
+let timerActive = false;
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  populateAllSelects();
+  renderRappels();
+  renderHistorique();
+  renderEfficacite();
+  renderProprietes();
+  renderVisites();
+  initGeo();
+  setupRecognition();
+});
+
+function populateAllSelects() {
+  ['fProp','rProp','vProp','filtProp'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const prev = el.value;
+    el.innerHTML = id === 'filtProp' ? '<option value="">Toutes propriétés</option>' : '';
+    proprietes.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.id; o.textContent = p.name;
+      el.appendChild(o);
+    });
+    if (prev) el.value = prev;
+  });
+}
+
+// ═══════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════
+function showTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  event.target.classList.add('active');
+  if (name==='historique') renderHistorique();
+  if (name==='efficacite') renderEfficacite();
+  if (name==='proprietes') renderProprietes();
+  if (name==='visites') renderVisites();
+  if (name==='rappels') renderRappels();
+}
+
+// ═══════════════════════════════════════════
+// GÉOLOCALISATION
+// ═══════════════════════════════════════════
+function initGeo() {
+  if (!navigator.geolocation) { setGeoLabel('GPS non disponible', false); return; }
+  navigator.geolocation.watchPosition(onGeoSuccess, onGeoError, { enableHighAccuracy: true });
+}
+
+function onGeoSuccess(pos) {
+  const { latitude: lat, longitude: lng } = pos.coords;
+  const found = detectProp(lat, lng);
+  const dot = document.getElementById('geoDot');
+  const label = document.getElementById('geoLabel');
+  if (found) {
+    dot.className = 'geo-dot active';
+    label.textContent = found.name;
+    handleArrival(found);
+  } else {
+    dot.className = 'geo-dot unknown';
+    label.textContent = 'Hors site';
+    handleDeparture();
+  }
+}
+function onGeoError() { setGeoLabel('GPS indisponible', false); }
+function setGeoLabel(txt, active) {
+  document.getElementById('geoLabel').textContent = txt;
+  document.getElementById('geoDot').className = 'geo-dot' + (active ? ' active' : '');
+}
+
+function detectProp(lat, lng) {
+  let closest = null, minDist = Infinity;
+  proprietes.forEach(p => {
+    if (!p.lat) return;
+    const d = Math.sqrt(Math.pow(lat - p.lat, 2) + Math.pow(lng - p.lng, 2));
+    if (d < 0.002 && d < minDist) { minDist = d; closest = p; }
+  });
+  return closest;
+}
+
+let lastProp = null;
+function handleArrival(prop) {
+  if (lastProp && lastProp.id === prop.id) return;
+  if (lastProp && lastProp.id !== prop.id) handleDeparture();
+  lastProp = prop;
+  currentProp = prop;
+  document.getElementById('fProp').value = prop.id;
+  document.getElementById('rProp').value = prop.id;
+  notify(`📍 Arrivée détectée : ${prop.name}`);
+  if (prop.timer && !timerActive) startTimer();
+}
+function handleDeparture() {
+  if (!lastProp) return;
+  const old = lastProp;
+  lastProp = null;
+  currentProp = null;
+  if (old.timer && timerActive) stopTimer();
+  openDepartModal(old);
+}
+
+// ═══════════════════════════════════════════
+// TIMER COMPIÈGNE
+// ═══════════════════════════════════════════
+function startTimer() {
+  timerActive = true;
+  timerStart = Date.now();
+  document.getElementById('timerBanner').style.display = 'flex';
+  timerInterval = setInterval(updateTimer, 1000);
+}
+function updateTimer() {
+  const elapsed = Math.floor((Date.now() - timerStart) / 1000);
+  const h = String(Math.floor(elapsed/3600)).padStart(2,'0');
+  const m = String(Math.floor((elapsed%3600)/60)).padStart(2,'0');
+  const s = String(elapsed%60).padStart(2,'0');
+  document.getElementById('timerDisplay').textContent = `${h}:${m}:${s}`;
+}
+function stopTimer() {
+  timerActive = false;
+  clearInterval(timerInterval);
+  document.getElementById('timerBanner').style.display = 'none';
+  const elapsed = Math.floor((Date.now() - timerStart) / 1000);
+  save('lastCompiTime', elapsed);
+  notify(`⏱ Temps sur site Compiègne : ${Math.floor(elapsed/60)} min`);
+}
+
+// ═══════════════════════════════════════════
+// RECONNAISSANCE VOCALE
+// ═══════════════════════════════════════════
+function setupRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    document.getElementById('recordLabel').textContent = 'Dictée non supportée sur ce navigateur';
+    document.getElementById('recordBtn').disabled = true;
+    return;
+  }
+  recognition = new SR();
+  recognition.lang = 'fr-FR';
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.onresult = (e) => {
+    let txt = '';
+    for (let i=0; i<e.results.length; i++) txt += e.results[i][0].transcript;
+    document.getElementById('transcriptBox').textContent = txt;
+  };
+  recognition.onend = () => {
+    isRecording = false;
+    document.getElementById('recordBtn').className = 'record-btn';
+    document.getElementById('recordBtn').textContent = '🎙';
+    document.getElementById('recordLabel').textContent = 'Appuyer pour dicter';
+    const txt = document.getElementById('transcriptBox').textContent.trim();
+    if (txt) {
+      parseTranscript(txt);
+      document.getElementById('transcriptWrap').style.display = 'block';
+      checkPortee(txt);
+    }
+  };
+  recognition.onerror = () => { isRecording = false; };
+}
+
+function toggleRecording() {
+  if (!recognition) return;
+  if (isRecording) {
+    recognition.stop();
+  } else {
+    document.getElementById('transcriptBox').textContent = '';
+    document.getElementById('transcriptWrap').style.display = 'none';
+    recognition.start();
+    isRecording = true;
+    document.getElementById('recordBtn').className = 'record-btn recording';
+    document.getElementById('recordBtn').textContent = '⏹';
+    document.getElementById('recordLabel').textContent = 'Enregistrement… (appuyer pour arrêter)';
+  }
+}
+
+function checkPortee(txt) {
+  const lower = txt.toLowerCase();
+  if (lower.includes('global') || lower.includes('toute') || lower.includes('partout') || lower.includes('ensemble')) {
+    setPortee('global');
+  } else {
+    setPortee('ponctuel');
+  }
+}
+
+function parseTranscript(txt) {
+  const lower = txt.toLowerCase();
+  // Intervention
+  document.getElementById('fIntervention').value = txt.split('.')[0].trim();
+  // Coût
+  const costMatch = txt.match(/(\d+[\.,]?\d*)\s*euro/i);
+  if (costMatch) document.getElementById('fCout').value = costMatch[1].replace(',','.');
+  // Lieu
+  const lieuMatch = txt.match(/dans\s+(?:la\s+|le\s+|l[\''])?(.+?)(?:,|\.|$)/i);
+  if (lieuMatch) document.getElementById('fLieu').value = lieuMatch[1].trim();
+  // Fourniture — après "matériau", "fourniture", "acheté"
+  const fourMatch = txt.match(/(?:fourniture|acheté|matéri\w+)\s*:?\s*(.+?)(?:,|\.|\d|pour|$)/i);
+  if (fourMatch) document.getElementById('fFourniture').value = fourMatch[1].trim();
+}
+
+// ═══════════════════════════════════════════
+// PORTÉE
+// ═══════════════════════════════════════════
+function setPortee(p) {
+  portee = p;
+  document.getElementById('portPonct').className = 'portee-btn' + (p==='ponctuel' ? ' active' : '');
+  document.getElementById('portGlob').className = 'portee-btn' + (p==='global' ? ' active' : '');
+  document.getElementById('fLieuGroup').style.display = p==='ponctuel' ? '' : 'none';
+}
+
+// ═══════════════════════════════════════════
+// SAUVEGARDE ENTRÉE
+// ═══════════════════════════════════════════
+function saveEntry() {
+  const prop = document.getElementById('fProp').value;
+  const unite = document.getElementById('fUnite').value;
+  const lieu = document.getElementById('fLieu').value;
+  const intervention = document.getElementById('fIntervention').value;
+  const fourniture = document.getElementById('fFourniture').value;
+  const cout = parseFloat(document.getElementById('fCout').value) || 0;
+  if (!intervention) { notify('⚠️ Veuillez renseigner l\'intervention'); return; }
+  const now = new Date();
+  const entry = {
+    id: Date.now(),
+    date: now.toLocaleDateString('fr-FR'),
+    heure: now.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}),
+    propId: prop,
+    propName: getPropName(prop),
+    unite, lieu, portee, intervention, fourniture, cout
+  };
+  entries.push(entry);
+  save('entries', entries);
+  cancelEntry();
+  notify('✅ Intervention enregistrée dans le carnet');
+}
+
+function cancelEntry() {
+  document.getElementById('transcriptBox').textContent = '';
+  document.getElementById('transcriptWrap').style.display = 'none';
+  document.getElementById('fIntervention').value = '';
+  document.getElementById('fFourniture').value = '';
+  document.getElementById('fCout').value = '';
+  document.getElementById('fLieu').value = '';
+  document.getElementById('fUnite').value = '';
+  portee = 'ponctuel';
+  setPortee('ponctuel');
+}
+
+// ═══════════════════════════════════════════
+// RAPPELS
+// ═══════════════════════════════════════════
+function addRappel() {
+  const prop = document.getElementById('rProp').value;
+  const type = document.getElementById('rType').value;
+  const desc = document.getElementById('rDesc').value.trim();
+  const empl = document.getElementById('rEmplacement').value.trim();
+  if (!desc) { notify('⚠️ Veuillez saisir une description'); return; }
+  rappels.push({ id: Date.now(), propId: prop, propName: getPropName(prop), type, desc, empl, done: false, created: new Date().toLocaleDateString('fr-FR') });
+  save('rappels', rappels);
+  document.getElementById('rDesc').value = '';
+  document.getElementById('rEmplacement').value = '';
+  renderRappels();
+  notify('📌 Rappel ajouté');
+}
+
+function addRappelByVoice() {
+  if (!recognition) { notify('Dictée non disponible'); return; }
+  showTab({target: document.querySelector('[onclick="showTab(\'rappels\')"]")}'});
+  // Just focus on desc field
+  document.getElementById('rDesc').focus();
+  notify('🎙 Dictez dans le champ Description');
+}
+
+function toggleRappel(id) {
+  const r = rappels.find(x => x.id === id);
+  if (r) { r.done = !r.done; save('rappels', rappels); renderRappels(); }
+}
+
+function deleteRappel(id) {
+  rappels = rappels.filter(x => x.id !== id);
+  save('rappels', rappels);
+  renderRappels();
+}
+
+function renderRappels() {
+  const el = document.getElementById('rappelList');
+  const active = rappels.filter(r => !r.done);
+  const done = rappels.filter(r => r.done);
+  if (!rappels.length) { el.innerHTML = '<div class="empty-state">Aucun rappel pour l\'instant</div>'; return; }
+  const icons = { outil:'🔧', travail:'🏗', fourniture:'📦' };
+  let html = '';
+  [...active, ...done].forEach(r => {
+    html += `<div class="todo-item ${r.done ? 'done' : ''}">
+      <div class="todo-check ${r.done ? 'checked' : ''}" onclick="toggleRappel(${r.id})">${r.done ? '✓' : ''}</div>
+      <div class="todo-content">
+        <div class="todo-title">${icons[r.type]||''} ${r.desc}</div>
+        <div class="todo-meta">${r.propName}${r.empl ? ' — ' + r.empl : ''} · ${r.created}</div>
+      </div>
+      <button class="todo-delete" onclick="deleteRappel(${r.id})">×</button>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════
+// VISITES & ICS
+// ═══════════════════════════════════════════
+function planifierVisite() {
+  const propId = document.getElementById('vProp').value;
+  const date   = document.getElementById('vDate').value;
+  if (!date) { notify('⚠️ Veuillez choisir une date'); return; }
+  const prop = proprietes.find(p => p.id === propId);
+  const rappelsProp = rappels.filter(r => r.propId === propId && !r.done);
+  const visite = { id: Date.now(), propId, propName: prop.name, date, rappels: rappelsProp.map(r=>r.id) };
+  visites.push(visite);
+  save('visites', visites);
+
+  // Générer ICS
+  generateICS(prop, date, rappelsProp);
+  renderVisites();
+  notify(`📅 Visite planifiée — ${prop.name} le ${formatDate(date)}`);
+}
+
+function generateICS(prop, dateStr, taches) {
+  const d = new Date(dateStr);
+  const veilleDate = new Date(d); veilleDate.setDate(d.getDate() - 1);
+  const formatDT = (dt, h=9) => {
+    const y = dt.getFullYear();
+    const mo = String(dt.getMonth()+1).padStart(2,'0');
+    const da = String(dt.getDate()).padStart(2,'0');
+    return `${y}${mo}${da}T${String(h).padStart(2,'0')}0000`;
+  };
+  const summary = `Préparer visite ${prop.name}`;
+  const taskList = taches.map(t => `- [${t.type.toUpperCase()}] ${t.desc}${t.empl ? ' (→ '+t.empl+')' : ''}`).join('\\n');
+  const desc = taches.length ? `Tâches prévues :\\n${taskList}` : 'Aucune tâche spécifique';
+  const uid = `maintenance-${Date.now()}@carnet`;
+  const icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Carnet Maintenance//FR',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTART:${formatDT(veilleDate)}`,
+    `DTEND:${formatDT(veilleDate,10)}`,
+    `SUMMARY:⚙ ${summary}`,
+    `DESCRIPTION:${desc}`,
+    'BEGIN:VALARM',
+    'TRIGGER:-PT0M',
+    'ACTION:DISPLAY',
+    `DESCRIPTION:${summary}`,
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\r\n');
+
+  const blob = new Blob([icsContent], { type: 'text/calendar' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `visite_${prop.id}_${dateStr}.ics`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function renderVisites() {
+  const el = document.getElementById('visiteList');
+  if (!visites.length) { el.innerHTML = '<div class="empty-state">Aucune visite planifiée</div>'; return; }
+  let html = '';
+  visites.sort((a,b) => a.date > b.date ? 1 : -1).forEach(v => {
+    const taches = rappels.filter(r => v.rappels.includes(r.id));
+    html += `<div class="visite-item">
+      <div class="visite-header">
+        <div><div class="visite-prop">${v.propName}</div></div>
+        <div style="text-align:right">
+          <div class="visite-date">${formatDate(v.date)}</div>
+          <button class="btn btn-danger" style="margin-top:6px;padding:4px 10px;font-size:10px" onclick="deleteVisite(${v.id})">Supprimer</button>
+        </div>
+      </div>
+      ${taches.length ? `<div style="font-size:12px;color:var(--text3)">${taches.length} tâche(s) associée(s)</div>` : ''}
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+function deleteVisite(id) {
+  visites = visites.filter(v => v.id !== id);
+  save('visites', visites);
+  renderVisites();
+}
+
+// ═══════════════════════════════════════════
+// HISTORIQUE & EXPORT
+// ═══════════════════════════════════════════
+function renderHistorique() {
+  const propFilter = document.getElementById('filtProp').value;
+  const search = document.getElementById('filtSearch').value.toLowerCase();
+  let filtered = entries.filter(e => {
+    if (propFilter && e.propId !== propFilter) return false;
+    if (search && !JSON.stringify(e).toLowerCase().includes(search)) return false;
+    return true;
+  }).reverse();
+  const body = document.getElementById('histoBody');
+  const empty = document.getElementById('histoEmpty');
+  if (!filtered.length) { body.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  body.innerHTML = filtered.map(e => `
+    <tr>
+      <td>${e.date}</td>
+      <td>${e.heure}</td>
+      <td>${e.propName}</td>
+      <td>${e.unite||'—'}</td>
+      <td>${e.lieu||'—'}</td>
+      <td><span class="badge badge-${e.portee}">${e.portee}</span></td>
+      <td>${e.intervention}</td>
+      <td>${e.fourniture||'—'}</td>
+      <td>${e.cout ? e.cout.toFixed(2)+' €' : '—'}</td>
+    </tr>`).join('');
+}
+
+function exportExcel() {
+  if (!entries.length) { notify('Aucune donnée à exporter'); return; }
+  const data = entries.map(e => ({
+    'Date': e.date, 'Heure': e.heure, 'Propriété': e.propName,
+    'Unité': e.unite||'', 'Lieu': e.lieu||'', 'Portée': e.portee,
+    'Intervention': e.intervention, 'Fourniture': e.fourniture||'', 'Coût (€)': e.cout||0
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Carnet');
+  ws['!cols'] = [8,8,20,15,15,10,30,20,10].map(w => ({wch:w}));
+  XLSX.writeFile(wb, `carnet_maintenance_${new Date().toISOString().slice(0,10)}.xlsx`);
+  notify('📥 Export Excel téléchargé');
+}
+
+// ═══════════════════════════════════════════
+// EFFICACITÉ
+// ═══════════════════════════════════════════
+function renderEfficacite() {
+  const total = validations.length;
+  const done  = validations.filter(v => v.status === 'fait').length;
+  const rate  = total ? Math.round(done/total*100) : 0;
+  const totalCout = entries.reduce((s,e) => s + (e.cout||0), 0);
+  const lastTime = load('lastCompiTime', 0);
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><span class="stat-val">${entries.length}</span><div class="stat-lbl">Interventions</div></div>
+    <div class="stat-card"><span class="stat-val">${rate}%</span><div class="stat-lbl">Taux réalisation</div></div>
+    <div class="stat-card"><span class="stat-val">${totalCout.toFixed(0)}€</span><div class="stat-lbl">Total fournitures</div></div>
+    <div class="stat-card"><span class="stat-val">${lastTime ? Math.floor(lastTime/60)+'min' : '—'}</span><div class="stat-lbl">Dernier temps Compiègne</div></div>
+  `;
+
+  // Par propriété
+  const detail = document.getElementById('efficaciteDetail');
+  if (!validations.length) { detail.innerHTML = '<div class="empty-state">Aucune donnée de validation encore</div>'; return; }
+  const byProp = {};
+  validations.forEach(v => {
+    if (!byProp[v.propName]) byProp[v.propName] = { total:0, done:0, motifs:{} };
+    byProp[v.propName].total++;
+    if (v.status==='fait') byProp[v.propName].done++;
+    else {
+      byProp[v.propName].motifs[v.motif] = (byProp[v.propName].motifs[v.motif]||0)+1;
+    }
+  });
+  detail.innerHTML = Object.entries(byProp).map(([name,d]) => {
+    const r = Math.round(d.done/d.total*100);
+    const motifsHtml = Object.entries(d.motifs).map(([m,c]) => `<span style="font-size:11px;color:var(--text3)">${m}: ${c}x</span>`).join(' · ');
+    return `<div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="color:var(--text);font-size:13px">${name}</span>
+        <span style="color:var(--accent)">${r}%</span>
+      </div>
+      <div style="background:var(--surface2);border-radius:4px;height:6px;overflow:hidden">
+        <div style="width:${r}%;height:100%;background:var(--accent2)"></div>
+      </div>
+      ${motifsHtml ? `<div style="margin-top:4px">${motifsHtml}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// MODAL DÉPART
+// ═══════════════════════════════════════════
+function openDepartModal(prop) {
+  const taches = rappels.filter(r => r.propId === prop.id && !r.done);
+  if (!taches.length) return;
+  document.getElementById('departPropName').textContent = prop.name;
+  document.getElementById('departList').innerHTML = taches.map(t => `
+    <li>
+      <input type="checkbox" id="dep_${t.id}" style="accent-color:var(--accent2)">
+      <label for="dep_${t.id}" style="flex:1;cursor:pointer">${t.desc}</label>
+      <select class="motif-select" id="motif_${t.id}">
+        <option value="">— motif si non fait —</option>
+        <option value="Manque de temps">Manque de temps</option>
+        <option value="Manque d'outil">Manque d'outil</option>
+        <option value="Manque de fourniture">Manque de fourniture</option>
+        <option value="Reporté">Reporté</option>
+        <option value="Autre">Autre</option>
+      </select>
+    </li>`).join('');
+  document.getElementById('departModal').classList.add('open');
+  window._departProp = prop;
+  window._departTaches = taches;
+}
+
+function validerDepart() {
+  const taches = window._departTaches || [];
+  taches.forEach(t => {
+    const checked = document.getElementById('dep_'+t.id)?.checked;
+    const motif = document.getElementById('motif_'+t.id)?.value || '';
+    validations.push({
+      id: Date.now()+Math.random(),
+      propName: window._departProp?.name,
+      propId: window._departProp?.id,
+      date: new Date().toLocaleDateString('fr-FR'),
+      task: t.desc,
+      status: checked ? 'fait' : 'non fait',
+      motif: checked ? '' : motif
+    });
+  });
+  save('validations', validations);
+  closeDepart();
+  renderEfficacite();
+  notify('✅ Bilan de visite enregistré');
+}
+function closeDepart() { document.getElementById('departModal').classList.remove('open'); }
+
+// ═══════════════════════════════════════════
+// PROPRIÉTÉS
+// ═══════════════════════════════════════════
+function renderProprietes() {
+  const el = document.getElementById('propList');
+  el.innerHTML = proprietes.map(p => `
+    <div class="prop-item">
+      <div class="prop-header" onclick="toggleProp('${p.id}')">
+        <div>
+          <div class="prop-name">${p.name} ${p.timer ? '⏱' : ''}</div>
+          <div class="prop-addr">${p.addr}</div>
+        </div>
+        <span style="color:var(--text3)">▾</span>
+      </div>
+      <div class="prop-body" id="propbody_${p.id}">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:8px">GPS: ${p.lat}, ${p.lng}</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">Unités :</div>
+        <ul class="unit-list" id="unitlist_${p.id}">
+          ${p.units.map((u,i) => `<li><span>${u}</span><button onclick="deleteUnit('${p.id}',${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px">×</button></li>`).join('')}
+        </ul>
+        <div class="add-row">
+          <input class="field-input" id="newunit_${p.id}" placeholder="Nouvelle unité…" style="font-size:12px">
+          <button class="btn btn-secondary" onclick="addUnit('${p.id}')" style="padding:8px 14px">+</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleProp(id) {
+  const body = document.getElementById('propbody_'+id);
+  body.classList.toggle('open');
+}
+function addUnit(propId) {
+  const input = document.getElementById('newunit_'+propId);
+  const val = input.value.trim();
+  if (!val) return;
+  const p = proprietes.find(x => x.id === propId);
+  if (p) { p.units.push(val); save('props', proprietes); renderProprietes(); }
+}
+function deleteUnit(propId, idx) {
+  const p = proprietes.find(x => x.id === propId);
+  if (p) { p.units.splice(idx,1); save('props', proprietes); renderProprietes(); }
+}
+function addPropriete() {
+  const name = document.getElementById('newPropName').value.trim();
+  const addr = document.getElementById('newPropAddr').value.trim();
+  const lat  = parseFloat(document.getElementById('newPropLat').value);
+  const lng  = parseFloat(document.getElementById('newPropLng').value);
+  if (!name) { notify('⚠️ Nom obligatoire'); return; }
+  proprietes.push({ id: 'p'+Date.now(), name, addr, lat: lat||0, lng: lng||0, units: [], timer: false });
+  save('props', proprietes);
+  populateAllSelects();
+  renderProprietes();
+  ['newPropName','newPropAddr','newPropLat','newPropLng'].forEach(id => document.getElementById(id).value = '');
+  notify('🏠 Propriété ajoutée');
+}
+
+// ═══════════════════════════════════════════
+// UTILITAIRES
+// ═══════════════════════════════════════════
+function getPropName(id) {
+  const p = proprietes.find(x => x.id === id);
+  return p ? p.name : id;
+}
+function formatDate(str) {
+  if (!str) return '';
+  const [y,m,d] = str.split('-');
+  return `${d}/${m}/${y}`;
+}
+function notify(msg) {
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
