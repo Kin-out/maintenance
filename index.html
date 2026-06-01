@@ -515,7 +515,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#0088ff;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ff6600;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -941,33 +941,50 @@ function setupRecognition() {
   }
   recognition = new SR();
   recognition.lang = 'fr-FR';
-  recognition.continuous = true;
+  recognition.continuous = false;
   recognition.interimResults = true;
+  let finalTranscript = '';
   recognition.onresult = (e) => {
     let txt = '';
     for (let i=0; i<e.results.length; i++) txt += e.results[i][0].transcript;
+    finalTranscript = txt;
     document.getElementById('transcriptBox').textContent = txt;
   };
   recognition.onend = () => {
+    if (!isRecording) return; // arrêt volontaire
+    // Sur iOS, onend se déclenche après silence — on relance si toujours en mode enregistrement
+    if (isRecording) {
+      try { recognition.start(); } catch(e) {}
+    }
+  };
+  recognition.onerror = (e) => {
+    if (e.error === 'aborted') return;
     isRecording = false;
     stopVumeter();
     document.getElementById('recordBtn').className = 'record-btn';
     document.getElementById('recordBtn').textContent = '🎙';
     document.getElementById('recordLabel').textContent = 'Appuyer pour dicter';
-    const txt = document.getElementById('transcriptBox').textContent.trim();
-    if (txt) {
-      parseTranscript(txt);
-      document.getElementById('transcriptWrap').style.display = 'block';
-      checkPortee(txt);
-    }
   };
-  recognition.onerror = () => { isRecording = false; stopVumeter(); };
 }
 
 function toggleRecording() {
   if (!recognition) { notify('⚠️ Dictée non disponible sur ce navigateur'); return; }
   if (isRecording) {
+    isRecording = false;
     recognition.stop();
+    stopVumeter();
+    document.getElementById('recordBtn').className = 'record-btn';
+    document.getElementById('recordBtn').textContent = '🎙';
+    document.getElementById('recordLabel').textContent = 'Appuyer pour dicter';
+    setTimeout(() => {
+      const txt = document.getElementById('transcriptBox').textContent.trim();
+      if (txt) {
+        parseTranscript(txt);
+        document.getElementById('transcriptWrap').style.display = 'block';
+        checkPortee(txt);
+      }
+    }, 300);
+    return;
   } else {
     document.getElementById('transcriptBox').textContent = '';
     document.getElementById('transcriptWrap').style.display = 'none';
