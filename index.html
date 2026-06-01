@@ -533,7 +533,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#9955ff;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#00cccc;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -566,20 +566,8 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
     <div class="card-title">🎙 Nouvelle intervention</div>
 
     <div class="record-zone">
-      <button class="record-btn" id="recordBtn" onclick="toggleRecording()">🎙</button>
-      <div class="record-label" id="recordLabel">Appuyer pour dicter</div>
-      <div style="display:flex;align-items:flex-end;justify-content:center;gap:0">
-        <div class="vu-scale" id="vuScale"><span>fort</span><span>moyen</span><span>faible</span></div>
-        <div class="vumeter" id="vumeter">
-          <div class="vu-bar" id="vb0"></div><div class="vu-bar" id="vb1"></div>
-          <div class="vu-bar" id="vb2"></div><div class="vu-bar" id="vb3"></div>
-          <div class="vu-bar" id="vb4"></div><div class="vu-bar" id="vb5"></div>
-          <div class="vu-bar" id="vb6"></div><div class="vu-bar" id="vb7"></div>
-          <div class="vu-bar" id="vb8"></div><div class="vu-bar" id="vb9"></div>
-          <div class="vu-bar" id="vb10"></div><div class="vu-bar" id="vb11"></div>
-        </div>
-      </div>
-      <div style="margin-top:16px;padding:12px 16px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;text-align:left;max-width:400px;margin-left:auto;margin-right:auto">
+      <!-- AIDE MEMOIRE -->
+      <div style="padding:12px 16px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;text-align:left;margin-bottom:14px">
         <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">Aide-mémoire dictée</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px">
           <span id="kw_intervention" class="kw-tag kw-gold">intervention</span>
@@ -590,20 +578,33 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
           <span id="kw_ponctuel"     class="kw-tag kw-teal">ponctuel</span>
           <span id="kw_global"       class="kw-tag kw-teal">global</span>
         </div>
-        <div style="margin-top:8px;font-size:11px;color:var(--text3);line-height:1.5">
-          Ex : <em style="color:var(--text2)">"J'ai changé le mitigeur dans la salle de bain, fourniture tête de mitigeur, coût 25 euros"</em>
-        </div>
       </div>
-    </div>
-
-    <div id="transcriptWrap" style="display:none">
+      <!-- TRANSCRIPTION -->
       <div
         class="transcript-box"
         id="transcriptBox"
         contenteditable="true"
         placeholder="La transcription apparaît ici — vous pouvez corriger..."
+        style="margin-bottom:14px"
       ></div>
+      <!-- VUMETRE -->
+      <div style="display:flex;align-items:flex-end;justify-content:center;gap:0;margin-bottom:14px">
+        <div class="vu-scale" id="vuScale"><span>fort</span><span>moyen</span><span>faible</span></div>
+        <div class="vumeter" id="vumeter">
+          <div class="vu-bar" id="vb0"></div><div class="vu-bar" id="vb1"></div>
+          <div class="vu-bar" id="vb2"></div><div class="vu-bar" id="vb3"></div>
+          <div class="vu-bar" id="vb4"></div><div class="vu-bar" id="vb5"></div>
+          <div class="vu-bar" id="vb6"></div><div class="vu-bar" id="vb7"></div>
+          <div class="vu-bar" id="vb8"></div><div class="vu-bar" id="vb9"></div>
+          <div class="vu-bar" id="vb10"></div><div class="vu-bar" id="vb11"></div>
+        </div>
+      </div>
+      <!-- BOUTON EN BAS -->
+      <button class="record-btn" id="recordBtn" onclick="toggleRecording()">🎙</button>
+      <div class="record-label" id="recordLabel">Appuyer pour dicter</div>
+    </div>
 
+    <div id="transcriptWrap" style="display:none">
       <div class="portee-select">
         <button class="portee-btn active" id="portPonct" onclick="setPortee('ponctuel')">📍 Ponctuel (pièce précise)</button>
         <button class="portee-btn" id="portGlob" onclick="setPortee('global')">🏠 Global (toute l'habitation)</button>
@@ -976,18 +977,21 @@ function setupRecognition() {
   recognition = new SR();
   recognition.lang = 'fr-FR';
   recognition.continuous = false;
-  recognition.interimResults = false;
+  recognition.interimResults = true;
 
   let silenceTimer = null;
 
   recognition.onresult = (e) => {
-    let txt = '';
+    let finalTxt = '';
+    let interimTxt = '';
     for (let i = 0; i < e.results.length; i++) {
-      if (e.results[i].isFinal) txt += e.results[i][0].transcript + ' ';
+      if (e.results[i].isFinal) finalTxt += e.results[i][0].transcript + ' ';
+      else interimTxt += e.results[i][0].transcript;
     }
     const box = document.getElementById('transcriptBox');
-    box.textContent = (box.textContent + ' ' + txt).trim();
-    highlightKeywords(box.textContent);
+    if (finalTxt) box.textContent = (box.textContent + ' ' + finalTxt).trim();
+    // Highlight sur tout ce qui est dit (final + interim)
+    highlightKeywords((box.textContent + ' ' + interimTxt).toLowerCase());
     // Reset silence timer — 5 secondes
     if (silenceTimer) clearTimeout(silenceTimer);
     silenceTimer = setTimeout(() => {
@@ -1000,12 +1004,15 @@ function setupRecognition() {
   };
 
   recognition.onend = () => {
-    if (userStoppedRecording) {
-      // Arrêt volontaire — finaliser
+    if (userStoppedRecording || !isRecording) {
       finishRecording();
-    } else if (isRecording) {
-      // iOS a coupé automatiquement — relancer
-      try { recognition.start(); } catch(e) { finishRecording(); }
+    } else {
+      // iOS a coupé automatiquement après silence — relancer
+      setTimeout(() => {
+        if (isRecording && !userStoppedRecording) {
+          try { recognition.start(); } catch(e) { finishRecording(); }
+        }
+      }, 100);
     }
   };
 
