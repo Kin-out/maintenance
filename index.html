@@ -533,7 +533,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#00cccc;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#aaff00;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -1064,8 +1064,9 @@ function finishRecording() {
   const txt = document.getElementById('transcriptBox').textContent.trim();
   if (txt) {
     parseTranscript(txt);
-    document.getElementById('transcriptWrap').style.display = 'block';
     checkPortee(txt);
+    // Show save/cancel buttons
+    document.getElementById('transcriptWrap').style.display = 'block';
   }
 }
 
@@ -1080,16 +1081,19 @@ function toggleRecording() {
     // Démarrage
     userStoppedRecording = false;
     document.getElementById('transcriptBox').textContent = '';
-    document.getElementById('transcriptWrap').style.display = 'none';
     resetKeywords();
-    try { recognition.start(); } catch(e) { return; }
-    isRecording = true;
-    document.getElementById('recordBtn').className = 'record-btn recording';
-    document.getElementById('recordBtn').textContent = '⏹';
-    document.getElementById('recordLabel').textContent = 'Enregistrement… (appuyer pour arrêter)';
-    // Toujours montrer la zone de transcription
-    document.getElementById('transcriptWrap').style.display = 'block';
-    startVumeter();
+    // Démarrer IMMÉDIATEMENT (Safari iOS exige action utilisateur directe)
+    try {
+      recognition.abort();
+    } catch(e) {}
+    setTimeout(() => {
+      try { recognition.start(); } catch(e) {}
+      isRecording = true;
+      document.getElementById('recordBtn').className = 'record-btn recording';
+      document.getElementById('recordBtn').textContent = '⏹';
+      document.getElementById('recordLabel').textContent = 'Enregistrement… (appuyer pour arrêter)';
+      startVumeter();
+    }, 150);
   }
 }
 
