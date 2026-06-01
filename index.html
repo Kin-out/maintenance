@@ -121,34 +121,65 @@ body {
 /* RECORD BUTTON */
 .record-zone {
   text-align: center;
-  padding: 32px 20px;
+  padding: 28px 20px;
 }
 .record-btn {
-  width: 80px; height: 80px;
+  width: 86px; height: 86px;
   border-radius: 50%;
-  border: 2px solid var(--accent);
-  background: transparent;
-  color: var(--accent);
-  font-size: 28px;
+  border: 3px solid #cc2200;
+  background: #cc2200;
+  color: #fff;
+  font-size: 30px;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 16px;
+  margin: 0 auto 14px;
+  box-shadow: 0 0 18px rgba(204,34,0,0.5);
 }
-.record-btn:hover { background: rgba(200,169,110,0.1); transform: scale(1.05); }
+.record-btn:hover { background: #e02800; box-shadow: 0 0 26px rgba(204,34,0,0.7); transform: scale(1.05); }
 .record-btn.recording {
-  background: rgba(196,122,106,0.15);
-  border-color: var(--danger);
-  color: var(--danger);
-  animation: pulse 1.2s infinite;
+  background: #ff1a00;
+  border-color: #ff1a00;
+  animation: pulse 1s infinite;
 }
 @keyframes pulse {
-  0%,100% { box-shadow: 0 0 0 0 rgba(196,122,106,0.4); }
-  50% { box-shadow: 0 0 0 12px rgba(196,122,106,0); }
+  0%,100% { box-shadow: 0 0 18px rgba(255,26,0,0.6); }
+  50% { box-shadow: 0 0 36px rgba(255,26,0,0.15); }
 }
-.record-label { font-size: 12px; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase; }
+.record-label { font-size: 12px; color: var(--text2); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 14px; }
+
+/* VUMETRE */
+.vumeter {
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  height: 56px;
+  margin: 0 auto 10px;
+  width: 200px;
+}
+.vumeter.active { display: flex; }
+.vu-bar {
+  width: 8px;
+  border-radius: 3px 3px 0 0;
+  background: #cc2200;
+  min-height: 4px;
+  transition: height 0.08s ease;
+}
+.vu-scale {
+  display: none;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 56px;
+  margin-right: 6px;
+  font-size: 9px;
+  color: var(--text3);
+  font-family: var(--mono);
+}
+.vu-scale.active { display: flex; }
 
 /* TRANSCRIPT */
 .transcript-box {
@@ -519,6 +550,17 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
     <div class="record-zone">
       <button class="record-btn" id="recordBtn" onclick="toggleRecording()">🎙</button>
       <div class="record-label" id="recordLabel">Appuyer pour dicter</div>
+      <div style="display:flex;align-items:flex-end;justify-content:center;gap:0">
+        <div class="vu-scale" id="vuScale"><span>fort</span><span>moyen</span><span>faible</span></div>
+        <div class="vumeter" id="vumeter">
+          <div class="vu-bar" id="vb0"></div><div class="vu-bar" id="vb1"></div>
+          <div class="vu-bar" id="vb2"></div><div class="vu-bar" id="vb3"></div>
+          <div class="vu-bar" id="vb4"></div><div class="vu-bar" id="vb5"></div>
+          <div class="vu-bar" id="vb6"></div><div class="vu-bar" id="vb7"></div>
+          <div class="vu-bar" id="vb8"></div><div class="vu-bar" id="vb9"></div>
+          <div class="vu-bar" id="vb10"></div><div class="vu-bar" id="vb11"></div>
+        </div>
+      </div>
     </div>
 
     <div id="transcriptWrap" style="display:none">
@@ -885,6 +927,11 @@ function stopTimer() {
 // ═══════════════════════════════════════════
 // RECONNAISSANCE VOCALE
 // ═══════════════════════════════════════════
+let audioCtx = null;
+let analyser = null;
+let vuStream = null;
+let vuAnimFrame = null;
+
 function setupRecognition() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
@@ -903,6 +950,7 @@ function setupRecognition() {
   };
   recognition.onend = () => {
     isRecording = false;
+    stopVumeter();
     document.getElementById('recordBtn').className = 'record-btn';
     document.getElementById('recordBtn').textContent = '🎙';
     document.getElementById('recordLabel').textContent = 'Appuyer pour dicter';
@@ -913,7 +961,7 @@ function setupRecognition() {
       checkPortee(txt);
     }
   };
-  recognition.onerror = () => { isRecording = false; };
+  recognition.onerror = () => { isRecording = false; stopVumeter(); };
 }
 
 function toggleRecording() {
@@ -928,6 +976,59 @@ function toggleRecording() {
     document.getElementById('recordBtn').className = 'record-btn recording';
     document.getElementById('recordBtn').textContent = '⏹';
     document.getElementById('recordLabel').textContent = 'Enregistrement… (appuyer pour arrêter)';
+    startVumeter();
+  }
+}
+
+async function startVumeter() {
+  try {
+    vuStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    const source = audioCtx.createMediaStreamSource(vuStream);
+    source.connect(analyser);
+    document.getElementById('vumeter').classList.add('active');
+    document.getElementById('vuScale').classList.add('active');
+    drawVumeter();
+  } catch(e) {
+    // micro refusé ou indisponible, on continue sans vumètre
+  }
+}
+
+function drawVumeter() {
+  const data = new Uint8Array(analyser.frequencyBinCount);
+  const BARS = 12;
+  function frame() {
+    vuAnimFrame = requestAnimationFrame(frame);
+    analyser.getByteFrequencyData(data);
+    const step = Math.floor(data.length / BARS);
+    for (let i = 0; i < BARS; i++) {
+      const val = data[i * step] / 255; // 0..1
+      const h = Math.max(4, Math.round(val * 52));
+      const bar = document.getElementById('vb'+i);
+      if (bar) {
+        bar.style.height = h + 'px';
+        // couleur : vert bas → orange moyen → rouge fort
+        if (val < 0.4) bar.style.background = '#4caf82';
+        else if (val < 0.75) bar.style.background = '#e0a030';
+        else bar.style.background = '#cc2200';
+      }
+    }
+  }
+  frame();
+}
+
+function stopVumeter() {
+  if (vuAnimFrame) cancelAnimationFrame(vuAnimFrame);
+  if (vuStream) vuStream.getTracks().forEach(t => t.stop());
+  if (audioCtx) audioCtx.close();
+  vuStream = null; audioCtx = null; analyser = null; vuAnimFrame = null;
+  document.getElementById('vumeter').classList.remove('active');
+  document.getElementById('vuScale').classList.remove('active');
+  for (let i=0; i<12; i++) {
+    const b = document.getElementById('vb'+i);
+    if (b) { b.style.height = '4px'; b.style.background = '#cc2200'; }
   }
 }
 
