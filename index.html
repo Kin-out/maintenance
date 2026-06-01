@@ -523,12 +523,12 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 </div>
 
 <div class="tabs">
-  <button class="tab active" onclick="showTab('saisie')">Saisie</button>
-  <button class="tab" onclick="showTab('rappels')">Rappels</button>
-  <button class="tab" onclick="showTab('visites')">Préparer visite</button>
-  <button class="tab" onclick="showTab('historique')">Historique</button>
-  <button class="tab" onclick="showTab('efficacite')">Efficacité</button>
-  <button class="tab" onclick="showTab('proprietes')">Propriétés</button>
+  <button class="tab active" onclick="showTab('saisie', this)">Saisie</button>
+  <button class="tab" onclick="showTab('rappels', this)">Rappels</button>
+  <button class="tab" onclick="showTab('visites', this)">Préparer visite</button>
+  <button class="tab" onclick="showTab('historique', this)">Historique</button>
+  <button class="tab" onclick="showTab('efficacite', this)">Efficacité</button>
+  <button class="tab" onclick="showTab('proprietes', this)">Propriétés</button>
 </div>
 
 <div class="main">
@@ -828,11 +828,11 @@ function populateAllSelects() {
 // ═══════════════════════════════════════════
 // TABS
 // ═══════════════════════════════════════════
-function showTab(name) {
+function showTab(name, btn) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('panel-'+name).classList.add('active');
-  event.target.classList.add('active');
+  if (btn) btn.classList.add('active');
   if (name==='historique') renderHistorique();
   if (name==='efficacite') renderEfficacite();
   if (name==='proprietes') renderProprietes();
@@ -965,17 +965,19 @@ function setupRecognition() {
 }
 
 function toggleRecording() {
-  if (!recognition) return;
+  if (!recognition) { notify('⚠️ Dictée non disponible sur ce navigateur'); return; }
   if (isRecording) {
     recognition.stop();
   } else {
     document.getElementById('transcriptBox').textContent = '';
     document.getElementById('transcriptWrap').style.display = 'none';
-    recognition.start();
+    // Démarrer reconnaissance IMMÉDIATEMENT (requis par Safari iOS)
+    try { recognition.start(); } catch(e) {}
     isRecording = true;
     document.getElementById('recordBtn').className = 'record-btn recording';
     document.getElementById('recordBtn').textContent = '⏹';
     document.getElementById('recordLabel').textContent = 'Enregistrement… (appuyer pour arrêter)';
+    // Vumètre en parallèle (non bloquant)
     startVumeter();
   }
 }
