@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Régisseur</title>
+<title>Le Régisseur</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -703,7 +703,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">🏠 Régisseur <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#4444ff;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">🏠 Le Régisseur <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -866,6 +866,25 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <!-- ═══════════ PROCHAINE VISITE ═══════════ -->
 <div class="panel" id="panel-prochaine">
 
+  <!-- SECTION PLANIFIER EN PREMIER -->
+  <div class="card">
+    <div class="card-title">🗓 Planifier le déplacement</div>
+    <div class="parsed-grid">
+      <div class="field-group">
+        <label class="field-label">Propriété</label>
+        <select class="field-input" id="vProp"></select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Date prévue</label>
+        <input class="field-input" type="date" id="vDate">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="planifierVisite()">Générer rappel .ics</button>
+    <div style="margin-top:14px">
+      <div id="visiteList"><div class="empty-state">Aucune visite planifiée</div></div>
+    </div>
+  </div>
+
   <!-- SECTION RAPPELS -->
   <div class="card">
     <div class="card-title">📋 Ajouter un rappel</div>
@@ -911,24 +930,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
     <div id="rappelList"><div class="empty-state">Aucun rappel</div></div>
   </div>
 
-  <!-- SECTION PLANIFIER -->
-  <div class="card">
-    <div class="card-title">🗓 Planifier le déplacement</div>
-    <div class="parsed-grid">
-      <div class="field-group">
-        <label class="field-label">Propriété</label>
-        <select class="field-input" id="vProp"></select>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Date prévue</label>
-        <input class="field-input" type="date" id="vDate">
-      </div>
-    </div>
-    <button class="btn btn-primary" onclick="planifierVisite()">Générer rappel .ics</button>
-    <div class="card" style="margin-top:14px;padding:14px;background:var(--surface2)">
-      <div id="visiteList"><div class="empty-state">Aucune visite planifiée</div></div>
-    </div>
-  </div>
+
 
 </div>
 
