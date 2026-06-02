@@ -619,7 +619,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#aaee00;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ffffff;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -1160,11 +1160,11 @@ function setupRecognition() {
 function highlightKeywords(txt) {
   const lower = txt.toLowerCase();
   const map = {
-    kw_lieu:         ['lieu','adresse','compiègne','jouet','arcachon','paris','bâtiment','immeuble'],
+    kw_lieu:         ['lieu','adresse','compiegne','jouet','arcachon','paris','batiment','immeuble'],
     kw_unite:        ['piece'],
-    kw_intervention: ['intervention','réparé','changé','installé','remplacé','posé','fixé','nettoyé','inspecté','contrôlé','testé','peint','percé','scellé','graissé','réglé','serré'],
-    kw_fourniture:   ['fourniture','matériau','acheté','joint','silicone','colle','vis','cheville','câble','interrupteur','ampoule','filtre','siphon','raccord','dalle','carrelage'],
-    kw_cout:         ['euro','coût','coute','coûte','prix','payé'],
+    kw_intervention: ['intervention','repare','change','installe','remplace','pose','fixe','nettoye','inspecte','controle','teste','peint'],
+    kw_fourniture:   ['fourniture','materiau','achete','joint','silicone','colle','vis','cheville','cable','interrupteur','ampoule','filtre','siphon','raccord','dalle','carrelage'],
+    kw_cout:         ['euro','cout','coute','prix','paye'],
     kw_surveiller:   ['surveiller','a surveiller','surveille','attention','verifier']
   };
   Object.entries(map).forEach(([id, keywords]) => {
@@ -1188,7 +1188,7 @@ function selectField(fieldId) {
   document.querySelectorAll('.tap-field').forEach(t => t.classList.remove('selected'));
   document.getElementById('tap_'+fieldId).classList.add('selected');
   selectedFieldId = fieldId;
-  const labels = {fLieu:'Situation géo', fUnite:'Pièce', fIntervention:'Intervention', fFourniture:'Fourniture', fCout:'Coût'};
+  const labels = {fLieu:'Situation geo', fUnite:'Piece', fIntervention:'Intervention', fFourniture:'Fourniture', fCout:'Coût'};
   selectedFieldLabel = labels[fieldId] || fieldId;
   document.getElementById('activeFieldLabel').textContent = '▶ ' + selectedFieldLabel + ' sélectionné — maintenir le bouton pour dicter';
   document.getElementById('recordLabel').textContent = 'Maintenir pour dicter';
@@ -1196,9 +1196,9 @@ function selectField(fieldId) {
 
 function startFieldMic(e) {
   if (e) e.preventDefault();
-  if (!selectedFieldId) { notify('Sélectionner d'abord un champ'); return; }
+  if (!selectedFieldId) { notify('Selectionner un champ dabord'); return; }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { notify('Dictée non disponible'); return; }
+  if (!SR) { notify('Dictee non disponible'); return; }
   if (fieldRecognition) { try { fieldRecognition.abort(); } catch(ex){} fieldRecognition = null; }
 
   const tapEl = document.getElementById('tap_'+selectedFieldId);
@@ -1264,7 +1264,7 @@ function stopFieldMic() {
 // PUSH TO TALK — appuyer = écoute, relâcher = stop
 function pttStart(fieldId, label) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { notify('Dictée non disponible'); return; }
+  if (!SR) { notify('Dictee non disponible'); return; }
   if (fieldRecognition) { try { fieldRecognition.abort(); } catch(e){} fieldRecognition = null; }
 
   const tapEl = document.getElementById('tap_'+fieldId);
@@ -1338,7 +1338,7 @@ let activeFieldMic = null;
 
 function dictateField(fieldId, label) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { notify('Dictée non disponible'); return; }
+  if (!SR) { notify('Dictee non disponible'); return; }
 
   // Si déjà actif sur ce champ, arrêter
   if (activeFieldMic === fieldId && fieldRecognition) {
@@ -1626,7 +1626,7 @@ function saveEntry() {
   const intervention = document.getElementById('fIntervention').value;
   const fourniture = document.getElementById('fFourniture').value;
   const cout = parseFloat(document.getElementById('fCout').value) || 0;
-  if (!intervention) { notify('⚠️ Veuillez renseigner l\'intervention'); return; }
+  if (!intervention) { notify('Veuillez renseigner une intervention'); return; }
   const now = new Date();
   const entry = {
     id: Date.now(),
@@ -1679,7 +1679,7 @@ function addRappel() {
 }
 
 function addRappelByVoice() {
-  if (!recognition) { notify('Dictée non disponible'); return; }
+  if (!recognition) { notify('Dictee non disponible'); return; }
   document.getElementById('rDesc').focus();
   notify('Dictez dans le champ Description');
 }
@@ -1901,7 +1901,7 @@ function openDepartModal(prop) {
       <select class="motif-select" id="motif_${t.id}">
         <option value="">— motif si non fait —</option>
         <option value="Manque de temps">Manque de temps</option>
-        <option value="Manque d'outil">Manque d'outil</option>
+        <option value="Manque outil">Manque outil</option>
         <option value="Manque de fourniture">Manque de fourniture</option>
         <option value="Reporté">Reporté</option>
         <option value="Autre">Autre</option>
