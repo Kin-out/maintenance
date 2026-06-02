@@ -281,6 +281,20 @@ select.field-input { cursor: pointer; }
 .btn-danger:hover { background: rgba(196,122,106,0.1); }
 .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
 
+/* FIELD MIC */
+.field-mic {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 4px;
+  vertical-align: middle;
+  opacity: 0.6;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.field-mic:hover { opacity: 1; transform: scale(1.2); }
+.field-mic.active { opacity: 1; animation: pulse 1s infinite; }
+
 /* PORTEE */
 .portee-select {
   display: flex;
@@ -544,7 +558,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#aa66ff;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ff8800;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -626,23 +640,23 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
           <select class="field-input" id="fProp"></select>
         </div>
         <div class="field-group">
-          <label class="field-label">Pièce</label>
+          <label class="field-label">Pièce <button class="field-mic" onclick="dictateField('fUnite','pièce')">🎙</button></label>
           <input class="field-input" id="fUnite" placeholder="ex: Chambre 2, Studio 3…">
         </div>
         <div class="field-group" id="fLieuGroup">
-          <label class="field-label">Situation géographique</label>
+          <label class="field-label">Situation géographique <button class="field-mic" onclick="dictateField('fLieu','lieu')">🎙</button></label>
           <input class="field-input" id="fLieu" placeholder="ex: Compiègne bât A, 24 Bagnolet RdC…">
         </div>
         <div class="field-group">
-          <label class="field-label">Intervention</label>
+          <label class="field-label">Intervention <button class="field-mic" onclick="dictateField('fIntervention','intervention')">🎙</button></label>
           <input class="field-input" id="fIntervention" placeholder="ex: Changement mitigeur">
         </div>
         <div class="field-group">
-          <label class="field-label">Fourniture</label>
+          <label class="field-label">Fourniture <button class="field-mic" onclick="dictateField('fFourniture','fourniture')">🎙</button></label>
           <input class="field-input" id="fFourniture" placeholder="ex: Tête de mitigeur">
         </div>
         <div class="field-group">
-          <label class="field-label">Coût (€)</label>
+          <label class="field-label">Coût (€) <button class="field-mic" onclick="dictateField('fCout','cout')">🎙</button></label>
           <input class="field-input" id="fCout" type="number" placeholder="0.00" step="0.01">
         </div>
       </div>
@@ -1068,6 +1082,64 @@ function resetKeywords() {
     .forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('lit'); });
 }
 
+// Dictée ciblée sur un champ
+let fieldRecognition = null;
+let activeFieldMic = null;
+
+function dictateField(fieldId, label) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { notify('Dictée non disponible'); return; }
+
+  // Si déjà actif sur ce champ, arrêter
+  if (activeFieldMic === fieldId && fieldRecognition) {
+    fieldRecognition.stop();
+    return;
+  }
+
+  // Arrêter tout fieldRecognition en cours
+  if (fieldRecognition) { try { fieldRecognition.stop(); } catch(e){} }
+
+  // Marquer le bouton actif
+  document.querySelectorAll('.field-mic').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector('[onclick="dictateField(\''+fieldId+'\',\''+label+'\')"]');
+  if (btn) btn.classList.add('active');
+  activeFieldMic = fieldId;
+
+  fieldRecognition = new SR();
+  fieldRecognition.lang = 'fr-FR';
+  fieldRecognition.continuous = false;
+  fieldRecognition.interimResults = false;
+
+  fieldRecognition.onresult = (e) => {
+    let txt = '';
+    for (let i=0; i<e.results.length; i++) txt += e.results[i][0].transcript + ' ';
+    txt = txt.trim();
+    // Pour le coût, extraire le nombre
+    if (fieldId === 'fCout') {
+      const conv = wordsToNum(txt.toLowerCase());
+      const m = conv.match(/(\d+[.,]?\d*)/);
+      if (m) document.getElementById(fieldId).value = m[1];
+    } else {
+      document.getElementById(fieldId).value = txt;
+    }
+    notify('✅ ' + label + ' : ' + txt);
+  };
+
+  fieldRecognition.onend = () => {
+    document.querySelectorAll('.field-mic').forEach(b => b.classList.remove('active'));
+    activeFieldMic = null;
+    fieldRecognition = null;
+  };
+
+  fieldRecognition.onerror = () => {
+    document.querySelectorAll('.field-mic').forEach(b => b.classList.remove('active'));
+    activeFieldMic = null;
+    fieldRecognition = null;
+  };
+
+  try { fieldRecognition.start(); } catch(e) { notify('Erreur micro'); }
+}
+
 function setRecordIdle() {
   document.getElementById('recordBtn').className = 'record-btn';
   document.getElementById('recordBtn').textContent = '🎙';
@@ -1202,7 +1274,7 @@ const FIELD_KEYWORDS = [
   { field: 'fUnite',        keys: ['piece'] },
   { field: 'fIntervention', keys: ['intervention'] },
   { field: 'fFourniture',   keys: ['fourniture'] },
-  { field: 'fCout',         keys: ['cout', 'euro', 'euros'] },
+  { field: 'fCout',         keys: ['cout'] },
 ];
 
 function normalizeStr(s) {
@@ -1263,10 +1335,17 @@ function parseTranscript(txt) {
     }
   });
 
-  // Coût — depuis texte converti, cherche nombre + euro
-  const costMatch = converted.match(/(\d+[.,]?\d*)\s*euro/)
-    || norm.match(/(\d+[.,]?\d*)\s*euro/);
-  if (costMatch) document.getElementById('fCout').value = costMatch[1].replace(',','.');
+  // Coût — depuis texte converti, cherche nombre + euro ou € ou cout
+  const costNorm = normalizeStr(txt);
+  const costConv = wordsToNum(costNorm);
+  // Cherche nombre suivi de euro/euros/€
+  const costMatch = costConv.match(/(\d+[.,]?\d*)\s*(?:euro[s]?|e\b)/)
+    || costConv.match(/cout\s+(\d+[.,]?\d*)/)
+    || costNorm.match(/(\d+)\s*(?:euro|euros|€)/);
+  if (costMatch) {
+    const val = (costMatch[1]||costMatch[2]||'').replace(',','.');
+    if (val) document.getElementById('fCout').value = val;
+  }
 }
 
 // ═══════════════════════════════════════════
