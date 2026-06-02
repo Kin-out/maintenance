@@ -154,22 +154,28 @@ body {
 .kw-tag {
   border-radius: 4px;
   padding: 4px 10px;
-  font-size: 12px;
+  font-size: 13px;
   font-family: var(--mono);
-  font-weight: 500;
+  font-weight: 600;
   transition: all 0.4s;
   opacity: 1;
   color: #ffffff;
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.4);
+  letter-spacing: 0.02em;
 }
-.kw-gold { color: #fff; }
-.kw-teal { color: #fff; }
+.kw-dim {
+  font-size: 11px;
+  font-weight: 400;
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.15);
+  color: var(--text2);
+}
 .kw-tag.lit {
-  opacity: 0.2;
-  transform: scale(0.92);
+  opacity: 0.15;
+  transform: scale(0.9);
   border-color: transparent;
-  background: rgba(255,255,255,0.04);
+  background: transparent;
   color: var(--text3);
 }
 
@@ -538,7 +544,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3344ff;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#88bb44;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -575,13 +581,12 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
       <div style="padding:12px 16px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;text-align:left;margin-bottom:14px">
         <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">Aide-mémoire dictée</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px">
-          <span id="kw_intervention" class="kw-tag kw-gold">intervention</span>
-          <span id="kw_fourniture"   class="kw-tag kw-gold">fourniture</span>
-          <span id="kw_cout"         class="kw-tag kw-gold">coût … euros</span>
-          <span id="kw_lieu"         class="kw-tag kw-gold">dans … (lieu)</span>
-          <span id="kw_unite"        class="kw-tag kw-teal">pièce</span>
-          <span id="kw_ponctuel"     class="kw-tag kw-teal">ponctuel</span>
-          <span id="kw_global"       class="kw-tag kw-teal">global</span>
+          <span id="kw_lieu"          class="kw-tag">① lieu</span>
+          <span id="kw_unite"         class="kw-tag">② pièce</span>
+          <span id="kw_intervention"  class="kw-tag">③ intervention</span>
+          <span id="kw_fourniture"    class="kw-tag">④ fourniture</span>
+          <span id="kw_cout"          class="kw-tag">⑤ coût … euros</span>
+          <span id="kw_surveiller"    class="kw-tag kw-dim">à surveiller</span>
         </div>
       </div>
       <!-- TRANSCRIPTION -->
@@ -1042,13 +1047,12 @@ function setupRecognition() {
 function highlightKeywords(txt) {
   const lower = txt.toLowerCase();
   const map = {
-    kw_intervention: ['intervention','réparé','changé','installé','remplacé','posé','fixé','nettoyé'],
-    kw_fourniture:   ['fourniture','matériau','acheté','pièce'],
-    kw_cout:         ['euro','coût','coute','coûte','prix'],
-    kw_lieu:         ['dans','salle','chambre','cuisine','couloir','garage','cave','grenier','wc','toilette','bureau'],
-    kw_unite:        ['appartement','appt','logement','unité','habitation','studio','chambre'],
-    kw_ponctuel:     ['ponctuel','précis','spécifique'],
-    kw_global:       ['global','tout','ensemble','partout','toute']
+    kw_lieu:         ['lieu','adresse','compiègne','jouet','arcachon','paris','bâtiment','immeuble'],
+    kw_unite:        ['pièce','chambre','salle','cuisine','couloir','bureau','wc','garage','cave','grenier','salon','studio','appt','appartement'],
+    kw_intervention: ['intervention','réparé','changé','installé','remplacé','posé','fixé','nettoyé','inspecté','contrôlé','testé','peint','percé','scellé','graissé','réglé','serré'],
+    kw_fourniture:   ['fourniture','matériau','acheté','joint','silicone','colle','vis','cheville','câble','interrupteur','ampoule','filtre','siphon','raccord','dalle','carrelage'],
+    kw_cout:         ['euro','coût','coute','coûte','prix','payé'],
+    kw_surveiller:   ['surveiller','à surveiller','surveille','attention','vérifier']
   };
   Object.entries(map).forEach(([id, keywords]) => {
     const el = document.getElementById(id);
@@ -1060,7 +1064,7 @@ function highlightKeywords(txt) {
 }
 
 function resetKeywords() {
-  ['kw_intervention','kw_fourniture','kw_cout','kw_lieu','kw_unite','kw_ponctuel','kw_global']
+  ['kw_intervention','kw_fourniture','kw_cout','kw_lieu','kw_unite','kw_surveiller']
     .forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('lit'); });
 }
 
@@ -1179,9 +1183,8 @@ function wordsToNum(str) {
     'cinquante':50,'soixante':60,'cent':100,'mille':1000};
   let s = str.toLowerCase();
   Object.entries(map).forEach(([w,n]) => {
-    s = s.replace(new RegExp('\b'+w+'\b','g'), ' '+n+' ');
+    s = s.replace(new RegExp('\\b'+w+'\\b','g'), ' '+n+' ');
   });
-  // Combine adjacent numbers (ex: "vingt cinq" -> 25)
   for (let i=0; i<3; i++) {
     s = s.replace(/\s*(\d+)\s+(\d+)\s*/g, (m,a,b) => {
       const A=parseInt(a), B=parseInt(b);
@@ -1193,32 +1196,61 @@ function wordsToNum(str) {
   return s.trim();
 }
 
+// Découpe le texte en segments selon les mots clés ordonnés
+// Ordre attendu : LIEU, PIÈCE, INTERVENTION, FOURNITURE, COÛT
 function parseTranscript(txt) {
   if (!txt) return;
   const lower = txt.toLowerCase();
   const converted = wordsToNum(lower);
 
-  // COÛT — nombre + euro (avec ou sans mot clé "coût")
-  const costMatch = converted.match(/(\d+[.,]?\d*)\s*euro/)
-    || lower.match(/(\d+[.,]?\d*)\s*euro/);
-  if (costMatch) document.getElementById('fCout').value = costMatch[1].replace(',','.');
+  // Mots déclencheurs par champ
+  const triggers = {
+    lieu:         ['lieu','adresse','propriété','bâtiment','immeuble','à compiègne','à jouet','à arcachon','à paris','dans le bâtiment'],
+    piece:        ['pièce','chambre','salle','cuisine','couloir','bureau','wc','toilette','garage','cave','grenier','salon','studio','appt','appartement'],
+    intervention: ['intervention','j'ai','j ai','changé','réparé','installé','remplacé','posé','fixé','nettoyé','vérifié','débouché'],
+    fourniture:   ['fourniture','acheté','matériau','pièce détachée','joint','vis','tuyau','robinet','vmc','mitigeur'],
+    cout:         ['euro','euros','coûte','coût','coute','prix','payé']
+  };
 
-  // FOURNITURE — après "fourniture", "acheté", "avec", "une", "un" + objet avant "euro" ou virgule
-  // Si pas de mot clé, tout ce qui précède "euro" et qui n'est pas un chiffre est la fourniture
-  const fourMatch = lower.match(/(?:fourniture[s]?|acheté|achat)\s*:?\s*([^,.\d][^,.]{2,60}?)(?=,|\.|coût|euro|\d|$)/i)
-    || lower.match(/(?:une?|des?)\s+([a-zàâéèêëîïôùûüç][^,.\d]{2,40}?)\s+(?:à|pour|coûte?|valant)?\s*(?:\d)/i);
-  if (fourMatch) document.getElementById('fFourniture').value = fourMatch[1].trim();
+  // Cherche chaque champ
+  const fields = { lieu:'fLieu', piece:'fUnite', intervention:'fIntervention', fourniture:'fFourniture', cout:'fCout' };
 
-  // SITUATION GÉO — après "à", "au", "dans", "sur le", "chez"
-  const lieuMatch = lower.match(/(?:dans|au niveau de|au|à la|à l[e']|sur le|chez)\s+(?:la |le |l')?([^,.]{3,50}?)(?=,|\.|$)/i);
-  if (lieuMatch) document.getElementById('fLieu').value = lieuMatch[1].trim();
+  // Découpe en segments séparés par virgule ou point
+  const segments = txt.split(/[,.]/).map(s => s.trim()).filter(Boolean);
 
-  // PIÈCE — numéro de pièce, chambre, studio, appt
-  const pieceMatch = lower.match(/(?:pièce|chambre|studio|appartement|appt|logement|habitation)\s*(?:numéro|n°|num)?\s*([a-z0-9\s]{1,10}?)(?=,|\.|$)/i);
-  if (pieceMatch) document.getElementById('fUnite').value = pieceMatch[0].trim();
+  // Assignation par correspondance de trigger
+  const assigned = {};
+  segments.forEach(seg => {
+    const segLow = seg.toLowerCase();
+    let bestField = null;
+    Object.entries(triggers).forEach(([field, words]) => {
+      if (!assigned[field] && words.some(w => segLow.includes(w))) {
+        bestField = field;
+      }
+    });
+    if (bestField) assigned[bestField] = seg;
+  });
 
-  // INTERVENTION — première phrase
-  document.getElementById('fIntervention').value = txt.split(/[,.]/)[0].trim();
+  // Fallback par position si pas de trigger trouvé
+  if (segments.length >= 1 && !assigned.lieu)         assigned.lieu = segments[0];
+  if (segments.length >= 2 && !assigned.piece)        assigned.piece = segments[1];
+  if (segments.length >= 3 && !assigned.intervention) assigned.intervention = segments[2];
+  if (segments.length >= 4 && !assigned.fourniture)   assigned.fourniture = segments[3];
+
+  // Coût — toujours depuis le texte converti
+  if (!assigned.cout) {
+    const costMatch = converted.match(/(\d+[.,]?\d*)\s*euro/) || lower.match(/(\d+[.,]?\d*)\s*euro/);
+    if (costMatch) document.getElementById('fCout').value = costMatch[1].replace(',','.');
+  } else {
+    const costMatch = wordsToNum(assigned.cout.toLowerCase()).match(/(\d+[.,]?\d*)\s*euro/) || assigned.cout.match(/(\d+[.,]?\d*)\s*euro/i);
+    if (costMatch) document.getElementById('fCout').value = costMatch[1].replace(',','.');
+  }
+
+  // Remplir les champs
+  if (assigned.lieu)         document.getElementById('fLieu').value = assigned.lieu;
+  if (assigned.piece)        document.getElementById('fUnite').value = assigned.piece;
+  if (assigned.intervention) document.getElementById('fIntervention').value = assigned.intervention;
+  if (assigned.fourniture)   document.getElementById('fFourniture').value = assigned.fourniture;
 }
 
 // ═══════════════════════════════════════════
