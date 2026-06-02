@@ -619,7 +619,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#0066ff;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#8833ff;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -708,7 +708,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <div class="field-group">
           <label class="field-label">Pièce</label>
           <div class="tap-field" id="tap_fUnite" onclick="selectField('fUnite')",'Pièce','piece')">
-            <span class="tap-val" id="val_fUnite">Double-tap pour sélectionner</span>
+            <span class="tap-val" id="val_fUnite">Toucher pour sélectionner</span>
             <span class="tap-icon">🎙</span>
             <input type="hidden" id="fUnite">
           </div>
@@ -716,7 +716,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <div class="field-group" id="fLieuGroup">
           <label class="field-label">Situation géographique</label>
           <div class="tap-field" id="tap_fLieu" onclick="selectField('fLieu')",'Situation géographique','lieu')">
-            <span class="tap-val" id="val_fLieu">Double-tap pour sélectionner</span>
+            <span class="tap-val" id="val_fLieu">Toucher pour sélectionner</span>
             <span class="tap-icon">🎙</span>
             <input type="hidden" id="fLieu">
           </div>
@@ -724,7 +724,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <div class="field-group">
           <label class="field-label">Intervention</label>
           <div class="tap-field" id="tap_fIntervention" onclick="selectField('fIntervention')",'Intervention','intervention')">
-            <span class="tap-val" id="val_fIntervention">Double-tap pour sélectionner</span>
+            <span class="tap-val" id="val_fIntervention">Toucher pour sélectionner</span>
             <span class="tap-icon">🎙</span>
             <input type="hidden" id="fIntervention">
           </div>
@@ -732,7 +732,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <div class="field-group">
           <label class="field-label">Fourniture</label>
           <div class="tap-field" id="tap_fFourniture" onclick="selectField('fFourniture')",'Fourniture','fourniture')">
-            <span class="tap-val" id="val_fFourniture">Double-tap pour sélectionner</span>
+            <span class="tap-val" id="val_fFourniture">Toucher pour sélectionner</span>
             <span class="tap-icon">🎙</span>
             <input type="hidden" id="fFourniture">
           </div>
@@ -740,7 +740,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <div class="field-group">
           <label class="field-label">Coût (€)</label>
           <div class="tap-field" id="tap_fCout" onclick="selectField('fCout')",'Coût','cout')">
-            <span class="tap-val" id="val_fCout">Double-tap pour sélectionner</span>
+            <span class="tap-val" id="val_fCout">Toucher pour sélectionner</span>
             <span class="tap-icon">🎙</span>
             <input type="hidden" id="fCout">
           </div>
@@ -907,6 +907,17 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <div class="notif" id="notif"></div>
 
 <script>
+// Bloquer zoom double-tap iOS
+document.addEventListener('touchstart', function(e) {
+  if (e.touches.length > 1) e.preventDefault();
+}, { passive: false });
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function(e) {
+  const now = Date.now();
+  if (now - lastTouchEnd < 300) e.preventDefault();
+  lastTouchEnd = now;
+}, { passive: false });
+
 // ═══════════════════════════════════════════
 // DONNÉES
 // ═══════════════════════════════════════════
@@ -1171,24 +1182,14 @@ function resetKeywords() {
 // OPTION C — sélection champ + bouton micro central
 let selectedFieldId = null;
 let selectedFieldLabel = '';
-let lastTapTime = {};
-
 function selectField(fieldId) {
-  const now = Date.now();
-  const last = lastTapTime[fieldId] || 0;
-  const isDouble = (now - last) < 400;
-  lastTapTime[fieldId] = now;
-
-  // Simple tap — sélectionner
   document.querySelectorAll('.tap-field').forEach(t => t.classList.remove('selected'));
-  const tapEl = document.getElementById('tap_'+fieldId);
-  tapEl.classList.add('selected');
+  document.getElementById('tap_'+fieldId).classList.add('selected');
   selectedFieldId = fieldId;
-
-  const labels = {fLieu:'Situation géographique', fUnite:'Pièce', fIntervention:'Intervention', fFourniture:'Fourniture', fCout:'Coût'};
+  const labels = {fLieu:'Situation géo', fUnite:'Pièce', fIntervention:'Intervention', fFourniture:'Fourniture', fCout:'Coût'};
   selectedFieldLabel = labels[fieldId] || fieldId;
-  document.getElementById('activeFieldLabel').textContent = '▶ ' + selectedFieldLabel + ' sélectionné';
-  document.getElementById('recordLabel').textContent = 'Maintenir le bouton pour dicter';
+  document.getElementById('activeFieldLabel').textContent = '▶ ' + selectedFieldLabel + ' sélectionné — maintenir le bouton pour dicter';
+  document.getElementById('recordLabel').textContent = 'Maintenir pour dicter';
 }
 
 function startFieldMic(e) {
@@ -1240,7 +1241,7 @@ function startFieldMic(e) {
       valEl.className = 'tap-val filled';
       notify('✅ ' + selectedFieldLabel + ' enregistré');
     } else {
-      valEl.textContent = document.getElementById(selectedFieldId).value || 'Double-tap pour sélectionner';
+      valEl.textContent = document.getElementById(selectedFieldId).value || 'Toucher pour sélectionner';
       valEl.className = document.getElementById(selectedFieldId).value ? 'tap-val filled' : 'tap-val';
     }
     fieldRecognition = null;
@@ -1305,7 +1306,7 @@ function pttStart(fieldId, label) {
       }
       valEl.className = 'tap-val filled';
     } else {
-      valEl.textContent = document.getElementById(fieldId).value || 'Double-tap pour sélectionner';
+      valEl.textContent = document.getElementById(fieldId).value || 'Toucher pour sélectionner';
       valEl.className = document.getElementById(fieldId).value ? 'tap-val filled' : 'tap-val placeholder';
     }
     fieldRecognition = null;
@@ -1316,7 +1317,7 @@ function pttStart(fieldId, label) {
     tapEl.classList.remove('listening');
     activeFieldMic = null;
     fieldRecognition = null;
-    valEl.textContent = document.getElementById(fieldId).value || 'Double-tap pour sélectionner';
+    valEl.textContent = document.getElementById(fieldId).value || 'Toucher pour sélectionner';
     valEl.className = 'tap-val placeholder';
   };
 
@@ -1647,7 +1648,7 @@ function cancelEntry() {
   ['fIntervention','fFourniture','fCout','fLieu','fUnite'].forEach(id => {
     document.getElementById(id).value = '';
     const v = document.getElementById('val_'+id);
-    if (v) { v.textContent = 'Double-tap pour sélectionner'; v.className = 'tap-val placeholder'; }
+    if (v) { v.textContent = 'Toucher pour sélectionner'; v.className = 'tap-val placeholder'; }
   });
   portee = 'ponctuel';
   setPortee('ponctuel');
