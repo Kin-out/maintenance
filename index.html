@@ -668,7 +668,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#00aa88;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#dd0055;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -1308,34 +1308,12 @@ function sfStart(fieldId, btn) {
     if (txt) {
       let val = txt;
       if (fieldId === 'fCout') {
+        // Prend uniquement ce qui est avant "euro", ignore la suite
         const norm = normalizeStr(txt);
-        // Sépare la partie euros et la partie centimes autour du mot "euro"
-        const parts = norm.split(/euros?/);
-        const eurosPart = parts[0].trim();   // "vingt quatre" ou "trente et un"
-        const centsPart = parts[1] ? parts[1].trim() : ''; // "cinquante" ou "sept" ou ""
-
-        const eurosConv = wordsToNum(eurosPart);
-        const eurosNum = eurosConv.match(/(\d+)/);
-        const eurosVal = eurosNum ? parseInt(eurosNum[1]) : 0;
-
-        let centsVal = 0;
-        if (centsPart) {
-          const centsConv = wordsToNum(centsPart);
-          const centsNum = centsConv.match(/(\d+)/);
-          if (centsNum) {
-            centsVal = parseInt(centsNum[1]);
-            // "sept" = 7 centimes = 0.07, "cinquante" = 50 centimes = 0.50
-            if (centsVal < 10) centsVal = centsVal; // 7 -> 07
-          }
-        }
-
-        if (centsVal > 0) {
-          // 1 chiffre = dixième (5 -> .5), 2 chiffres = centièmes (50 -> .50)
-          const centsStr = '' + centsVal;
-          val = eurosVal + '.' + centsStr;
-        } else {
-          val = '' + eurosVal;
-        }
+        const beforeEuro = norm.split(/euros?/)[0].trim();
+        const conv = wordsToNum(beforeEuro);
+        const m = conv.match(/(\d+)/);
+        val = m ? m[1] : '0';
         valEl.textContent = val + ' €';
       } else {
         valEl.textContent = txt;
