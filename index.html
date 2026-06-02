@@ -3,22 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Carnet de Maintenance</title>
+<title>Régisseur</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
-  --bg: #0d1117;
-  --surface: #161b22;
-  --surface2: #1e2530;
-  --border: #30363d;
-  --accent: #58a6ff;
-  --accent2: #3fb950;
-  --danger: #f85149;
-  --text: #e6edf3;
-  --text2: #8b949e;
-  --text3: #484f58;
-  --radius: 10px;
+  --bg: #f5f0e8;
+  --surface: #ffffff;
+  --surface2: #f0ebe0;
+  --border: #d4c9b8;
+  --accent: #2563eb;
+  --accent2: #16a34a;
+  --danger: #dc2626;
+  --text: #1a1a1a;
+  --text2: #4a4a4a;
+  --text3: #888880;
+  --radius: 16px;
   --mono: 'DM Mono', monospace;
   --serif: 'DM Serif Display', serif;
 }
@@ -37,7 +37,7 @@ body {
   justify-content: space-between;
   padding: 16px 24px;
   border-bottom: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--accent);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -45,7 +45,7 @@ body {
 .app-title {
   font-family: var(--serif);
   font-size: 20px;
-  color: var(--accent);
+  color: #ffffff;
   letter-spacing: 0.02em;
 }
 .geo-badge {
@@ -73,7 +73,7 @@ body {
   display: flex;
   gap: 0;
   padding: 0 24px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px solid var(--border);
   background: var(--surface);
   overflow-x: auto;
 }
@@ -104,7 +104,8 @@ body {
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
   padding: 20px;
   margin-bottom: 16px;
 }
@@ -183,7 +184,8 @@ body {
 .save-main-btn {
   width: 100%;
   padding: 18px;
-  background: #238636;
+  background: var(--accent2);
+  border-radius: 14px;
   color: var(--bg);
   border: none;
   border-radius: var(--radius);
@@ -304,15 +306,17 @@ select.field-input { cursor: pointer; }
 /* SIMPLE FIELDS */
 .sf-fields { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
 .sf-row { display: flex; flex-direction: column; gap: 5px; }
-.sf-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+.sf-label { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-bottom: 2px; }
 .sf-input-row {
   display: flex; align-items: center; gap: 10px;
-  background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 8px; padding: 10px 14px;
-  min-height: 52px;
+  background: var(--surface2); border: 2px solid var(--border);
+  border-radius: 14px; padding: 12px 16px;
+  min-height: 56px;
+  transition: border-color 0.2s;
 }
-.sf-val { flex: 1; font-family: var(--mono); font-size: 14px; color: var(--text3); }
-.sf-val.filled { color: var(--text); }
+.sf-input-row:focus-within { border-color: var(--accent); }
+.sf-val { flex: 1; font-family: var(--mono); font-size: 15px; color: var(--text2); font-weight: 500; }
+.sf-val.filled { color: var(--text); font-weight: 600; }
 .sf-val.listening { color: var(--accent); }
 .vu-mini {
   display: flex;
@@ -329,14 +333,14 @@ select.field-input { cursor: pointer; }
   transition: background 0.1s;
 }
 .sf-mic {
-  width: 48px; height: 48px; border-radius: 50%;
-  background: #cc2200; border: none; color: white;
-  font-size: 22px; cursor: pointer;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: #dc2626; border: none; color: white;
+  font-size: 24px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; transition: all 0.15s;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
-  box-shadow: 0 2px 8px rgba(204,34,0,0.4);
+  box-shadow: 0 4px 12px rgba(220,38,38,0.35);
 }
 .sf-mic:active, .sf-mic.listening {
   background: #ff1100; transform: scale(1.15);
@@ -430,7 +434,7 @@ select.field-input { cursor: pointer; }
 .portee-btn {
   flex: 1;
   padding: 10px;
-  border-radius: 6px;
+  border-radius: 20px;
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text2);
@@ -684,7 +688,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#58a6ff;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">🏠 Régisseur <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e63946;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -714,7 +718,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
   </div>
 
   <div class="card" style="padding:20px">
-    <div class="card-title" style="margin-bottom:20px">⚙ Nouvelle intervention</div>
+    <div class="card-title" style="margin-bottom:20px">+ Nouvelle intervention</div>
 
     <!-- CHAMPS AVEC MICRO -->
     <div class="sf-fields" id="sfFields">
@@ -791,6 +795,27 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
             </div>
             <button class="sf-mic" onmousedown="sfStart('fCout',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fCout',this);" ontouchend="sfStop();">🎙</button>
           <input type="hidden" id="fCout">
+        </div>
+      </div>
+
+
+      <div class="sf-row">
+        <label class="sf-label">Observation</label>
+        <div class="sf-input-row">
+          <div class="sf-val" id="val_fObservation">—</div>
+          <div id="vu_fObservation" class="vu-mini"><div class="vu-mini-bar"></div><div class="vu-mini-bar"></div><div class="vu-mini-bar"></div></div>
+          <button class="sf-mic" onmousedown="sfStart('fObservation',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fObservation',this);" ontouchend="sfStop();">🎙</button>
+          <input type="hidden" id="fObservation">
+        </div>
+      </div>
+
+      <div class="sf-row">
+        <label class="sf-label">Action a prevoir</label>
+        <div class="sf-input-row">
+          <div class="sf-val" id="val_fAction">—</div>
+          <div id="vu_fAction" class="vu-mini"><div class="vu-mini-bar"></div><div class="vu-mini-bar"></div><div class="vu-mini-bar"></div></div>
+          <button class="sf-mic" onmousedown="sfStart('fAction',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fAction',this);" ontouchend="sfStop();">🎙</button>
+          <input type="hidden" id="fAction">
         </div>
       </div>
 
