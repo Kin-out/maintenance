@@ -668,7 +668,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#003388;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#9900cc;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -1308,11 +1308,25 @@ function sfStart(fieldId, btn) {
     if (txt) {
       let val = txt;
       if (fieldId === 'fCout') {
-        // Convert spoken numbers to digits first
-        const conv = wordsToNum(normalizeStr(txt));
-        // Find pattern like "31.07" or "31" or "24"
-        const m = conv.match(/(\d+[.,]\d+)/) || conv.match(/(\d+)/);
-        val = m ? m[1].replace(',','.') : txt;
+        const norm = normalizeStr(txt);
+        const conv = wordsToNum(norm);
+        // Cherche "24.50" ou "24,50" d'abord
+        let m = conv.match(/(\d+)[.,](\d+)/);
+        if (m) {
+          val = m[1] + '.' + m[2];
+        } else {
+          // Cherche deux nombres séparés : "24 50" -> 24.50
+          // Mais seulement si le second est < 100 (centimes)
+          const twoNums = conv.match(/(\d+)\s+(\d{1,2})\s*(?:euro|$)/);
+          if (twoNums && parseInt(twoNums[2]) < 100) {
+            const cents = twoNums[2].length === 1 ? twoNums[2] + '0' : twoNums[2];
+            val = twoNums[1] + '.' + cents;
+          } else {
+            // Un seul nombre
+            const single = conv.match(/(\d+)/);
+            val = single ? single[1] : txt;
+          }
+        }
         valEl.textContent = val + ' €';
       } else {
         valEl.textContent = txt;
