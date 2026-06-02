@@ -302,27 +302,39 @@ select.field-input { cursor: pointer; }
 .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
 
 /* SIMPLE FIELDS */
-.simple-fields { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
-.sf-row { display: flex; flex-direction: column; gap: 4px; }
+.sf-fields { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.sf-row { display: flex; flex-direction: column; gap: 5px; }
 .sf-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
-.sf-input-row { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
-.sf-val { flex: 1; font-family: var(--mono); font-size: 13px; color: var(--text2); min-height: 20px; }
+.sf-input-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 14px;
+  min-height: 52px;
+}
+.sf-val { flex: 1; font-family: var(--mono); font-size: 14px; color: var(--text3); }
 .sf-val.filled { color: var(--text); }
+.sf-val.listening { color: var(--accent); }
 .sf-mic {
-  width: 44px; height: 44px;
-  border-radius: 50%;
-  background: #cc2200;
-  border: none;
-  color: white;
-  font-size: 20px;
-  cursor: pointer;
+  width: 48px; height: 48px; border-radius: 50%;
+  background: #cc2200; border: none; color: white;
+  font-size: 22px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  transition: all 0.15s;
+  flex-shrink: 0; transition: all 0.15s;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  box-shadow: 0 2px 8px rgba(204,34,0,0.4);
 }
-.sf-mic:active, .sf-mic.listening { background: #ff0000; transform: scale(1.1); box-shadow: 0 0 12px rgba(255,0,0,0.5); }
+.sf-mic:active, .sf-mic.listening {
+  background: #ff1100; transform: scale(1.15);
+  box-shadow: 0 0 16px rgba(255,17,0,0.6);
+}
+
+/* ACTION BAR */
+.action-bar { border-top: 1px solid var(--border); padding-top: 16px; display: flex; flex-direction: column; gap: 12px; }
+.action-bar-top { display: flex; gap: 8px; flex-wrap: wrap; }
+.action-bar-bottom { display: flex; gap: 10px; }
+.surveiller-btn { border-color: rgba(196,122,106,0.5) !important; color: var(--danger) !important; }
+.surveiller-btn.active-surv { background: rgba(196,122,106,0.2) !important; border-color: var(--danger) !important; }
 
 /* TAP FIELDS */
 .tap-field {
@@ -642,7 +654,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#00ddcc;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#223388;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -671,241 +683,81 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
     <button class="btn btn-secondary" onclick="stopTimer()">Arrêter</button>
   </div>
 
-  <div class="card">
-    <div class="card-title">🎙 Nouvelle intervention</div>
+  <div class="card" style="padding:20px">
+    <div class="card-title" style="margin-bottom:20px">⚙ Nouvelle intervention</div>
 
-    <div class="record-zone">
-      <!-- AIDE MEMOIRE -->
-      <div style="padding:12px 16px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;text-align:left;margin-bottom:14px">
-        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">Aide-mémoire dictée</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px">
-          <span id="kw_lieu"          class="kw-tag">① lieu</span>
-          <span id="kw_unite"         class="kw-tag">② pièce</span>
-          <span id="kw_intervention"  class="kw-tag">③ intervention</span>
-          <span id="kw_fourniture"    class="kw-tag">④ fourniture</span>
-          <span id="kw_cout"          class="kw-tag">⑤ coût … euros</span>
-          <span id="kw_surveiller"    class="kw-tag" style="background:rgba(196,122,106,0.3);color:#ff9977;border-color:rgba(196,122,106,0.6)">⚠ à surveiller</span>
+    <!-- CHAMPS AVEC MICRO -->
+    <div class="sf-fields" id="sfFields">
+
+      <div class="sf-row">
+        <label class="sf-label">Propriété</label>
+        <select class="field-input" id="fProp"></select>
+      </div>
+
+      <div class="sf-row">
+        <label class="sf-label">Situation géographique</label>
+        <div class="sf-input-row">
+          <div class="sf-val" id="val_fLieu">—</div>
+          <button class="sf-mic" onmousedown="sfStart('fLieu',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fLieu',this);return false;" ontouchend="sfStop();return false;">🎙</button>
+          <input type="hidden" id="fLieu">
         </div>
       </div>
-      <!-- TRANSCRIPTION -->
-      <div
-        class="transcript-box"
-        id="transcriptBox"
-        contenteditable="true"
-        placeholder="La transcription apparaît ici — vous pouvez corriger..."
-        style="margin-bottom:14px"
-      ></div>
-      <!-- VUMETRE -->
-      <div style="display:flex;align-items:flex-end;justify-content:center;gap:0;margin-bottom:14px">
-        <div class="vu-scale" id="vuScale"><span>fort</span><span>moyen</span><span>faible</span></div>
-        <div class="vumeter" id="vumeter">
-          <div class="vu-bar" id="vb0"></div><div class="vu-bar" id="vb1"></div>
-          <div class="vu-bar" id="vb2"></div><div class="vu-bar" id="vb3"></div>
-          <div class="vu-bar" id="vb4"></div><div class="vu-bar" id="vb5"></div>
-          <div class="vu-bar" id="vb6"></div><div class="vu-bar" id="vb7"></div>
-          <div class="vu-bar" id="vb8"></div><div class="vu-bar" id="vb9"></div>
-          <div class="vu-bar" id="vb10"></div><div class="vu-bar" id="vb11"></div>
+
+      <div class="sf-row">
+        <label class="sf-label">Pièce</label>
+        <div class="sf-input-row">
+          <div class="sf-val" id="val_fUnite">—</div>
+          <button class="sf-mic" onmousedown="sfStart('fUnite',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fUnite',this);return false;" ontouchend="sfStop();return false;">🎙</button>
+          <input type="hidden" id="fUnite">
         </div>
       </div>
-      <!-- BOUTONS ACTION -->
-      <div style="display:flex;gap:10px;margin-top:8px">
+
+      <div class="sf-row">
+        <label class="sf-label">Intervention</label>
+        <div class="sf-input-row">
+          <div class="sf-val" id="val_fIntervention">—</div>
+          <button class="sf-mic" onmousedown="sfStart('fIntervention',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fIntervention',this);return false;" ontouchend="sfStop();return false;">🎙</button>
+          <input type="hidden" id="fIntervention">
+        </div>
+      </div>
+
+      <div class="sf-row">
+        <label class="sf-label">Fourniture</label>
+        <div class="sf-input-row">
+          <div class="sf-val" id="val_fFourniture">—</div>
+          <button class="sf-mic" onmousedown="sfStart('fFourniture',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fFourniture',this);return false;" ontouchend="sfStop();return false;">🎙</button>
+          <input type="hidden" id="fFourniture">
+        </div>
+      </div>
+
+      <div class="sf-row">
+        <label class="sf-label">Cout (euros)</label>
+        <div class="sf-input-row">
+          <div class="sf-val" id="val_fCout">—</div>
+          <button class="sf-mic" onmousedown="sfStart('fCout',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fCout',this);return false;" ontouchend="sfStop();return false;">🎙</button>
+          <input type="hidden" id="fCout">
+        </div>
+      </div>
+
+    </div><!-- /sf-fields -->
+
+    <!-- BARRE D'ACTIONS -->
+    <div class="action-bar">
+      <div class="action-bar-top">
+        <button class="portee-btn active" id="portPonct" onclick="setPortee('ponctuel')">📍 Ponctuel</button>
+        <button class="portee-btn" id="portGlob" onclick="setPortee('global')">🏠 Global</button>
+        <button class="portee-btn surveiller-btn" id="portSurveiller" onclick="toggleSurveiller(this)">⚠ A surveiller</button>
+      </div>
+      <div class="action-bar-bottom">
         <button class="save-main-btn" onclick="saveEntry()">💾 Sauvegarder</button>
         <button class="btn btn-secondary" style="padding:14px 20px;font-size:18px" onclick="cancelEntry()">✕</button>
       </div>
     </div>
 
-    <div id="transcriptWrap" style="display:block">
-      <div class="portee-select">
-        <button class="portee-btn active" id="portPonct" onclick="setPortee('ponctuel')">📍 Ponctuel (pièce précise)</button>
-        <button class="portee-btn" id="portGlob" onclick="setPortee('global')">🏠 Global (toute l'habitation)</button>
-      </div>
-
-      <div class="simple-fields">
-        <div class="sf-row">
-          <label class="sf-label">Propriété</label>
-          <select class="field-input" id="fProp"></select>
-        </div>
-        <div class="sf-row">
-          <label class="sf-label">Situation géographique</label>
-          <div class="sf-input-row">
-            <div class="sf-val" id="val_fLieu">—</div>
-            <button class="sf-mic" onmousedown="sfStart('fLieu',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fLieu',this);return false;" ontouchend="sfStop();return false;">🎙</button>
-            <input type="hidden" id="fLieu">
-          </div>
-        </div>
-        <div class="sf-row">
-          <label class="sf-label">Pièce</label>
-          <div class="sf-input-row">
-            <div class="sf-val" id="val_fUnite">—</div>
-            <button class="sf-mic" onmousedown="sfStart('fUnite',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fUnite',this);return false;" ontouchend="sfStop();return false;">🎙</button>
-            <input type="hidden" id="fUnite">
-          </div>
-        </div>
-        <div class="sf-row">
-          <label class="sf-label">Intervention</label>
-          <div class="sf-input-row">
-            <div class="sf-val" id="val_fIntervention">—</div>
-            <button class="sf-mic" onmousedown="sfStart('fIntervention',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fIntervention',this);return false;" ontouchend="sfStop();return false;">🎙</button>
-            <input type="hidden" id="fIntervention">
-          </div>
-        </div>
-        <div class="sf-row">
-          <label class="sf-label">Fourniture</label>
-          <div class="sf-input-row">
-            <div class="sf-val" id="val_fFourniture">—</div>
-            <button class="sf-mic" onmousedown="sfStart('fFourniture',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fFourniture',this);return false;" ontouchend="sfStop();return false;">🎙</button>
-            <input type="hidden" id="fFourniture">
-          </div>
-        </div>
-        <div class="sf-row">
-          <label class="sf-label">Cout (euros)</label>
-          <div class="sf-input-row">
-            <div class="sf-val" id="val_fCout">—</div>
-            <button class="sf-mic" onmousedown="sfStart('fCout',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fCout',this);return false;" ontouchend="sfStop();return false;">🎙</button>
-            <input type="hidden" id="fCout">
-          </div>
-        </div>
-      </div>
-
-      <div class="btn-row">
-        <button class="btn btn-primary" onclick="saveEntry()">💾 Sauvegarder</button>
-        <button class="btn btn-secondary" onclick="cancelEntry()">Annuler</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════ RAPPELS ═══════════ -->
-<div class="panel" id="panel-rappels">
-  <div class="card">
-    <div class="card-title">➕ Ajouter un rappel</div>
-    <div class="parsed-grid">
-      <div class="field-group">
-        <label class="field-label">Propriété</label>
-        <select class="field-input" id="rProp"></select>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Type</label>
-        <select class="field-input" id="rType">
-          <option value="outil">🔧 Outil à ramener</option>
-          <option value="travail">🏗 Travail à prévoir</option>
-          <option value="fourniture">📦 Fourniture à acheter</option>
-        </select>
-      </div>
-      <div class="field-group" style="grid-column: 1/-1">
-        <label class="field-label">Description</label>
-        <input class="field-input" id="rDesc" placeholder="ex: Clé à molette + scie sauteuse">
-      </div>
-      <div class="field-group">
-        <label class="field-label">Emplacement des équipements</label>
-        <input class="field-input" id="rEmplacement" placeholder="ex: Atelier Jouet, caisse rouge">
-      </div>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="addRappel()">Ajouter</button>
-      <button class="btn btn-secondary" onclick="addRappelByVoice()">🎙 Dicter</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">📋 Rappels actifs</div>
-    <div id="rappelList"><div class="empty-state">Aucun rappel pour l'instant</div></div>
-  </div>
-</div>
-
-<!-- ═══════════ PRÉPARER VISITE ═══════════ -->
-<div class="panel" id="panel-visites">
-  <div class="card">
-    <div class="card-title">🗓 Planifier un déplacement</div>
-    <div class="parsed-grid">
-      <div class="field-group">
-        <label class="field-label">Propriété</label>
-        <select class="field-input" id="vProp"></select>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Date prévue</label>
-        <input class="field-input" type="date" id="vDate">
-      </div>
-    </div>
-    <button class="btn btn-primary" onclick="planifierVisite()">Planifier + générer rappels .ics</button>
-  </div>
-
-  <div class="card">
-    <div class="card-title">📅 Visites planifiées</div>
-    <div id="visiteList"><div class="empty-state">Aucune visite planifiée</div></div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">📥 Rappels .ics générés</div>
-    <div id="icsList"><div class="empty-state">Aucun fichier .ics généré</div></div>
-  </div>
-</div>
-
-<!-- ═══════════ HISTORIQUE ═══════════ -->
-<div class="panel" id="panel-historique">
-  <div class="card" style="padding:14px">
-    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center">
-      <select class="field-input" id="filtProp" style="width:auto" onchange="renderHistorique()">
-        <option value="">Toutes propriétés</option>
-      </select>
-      <input class="field-input" type="text" id="filtSearch" placeholder="Rechercher…" style="width:auto;flex:1" oninput="renderHistorique()">
-      <button class="btn btn-secondary" onclick="exportExcel()">⬇ Export Excel</button>
-    </div>
-  </div>
-  <div class="card" style="padding:0 20px 20px">
-    <div class="table-wrap">
-      <table id="histoTable">
-        <thead>
-          <tr>
-            <th>Date</th><th>Heure</th><th>Propriété</th><th>Unité</th>
-            <th>Lieu</th><th>Portée</th><th>Intervention</th><th>Fourniture</th><th>Coût €</th>
-          </tr>
-        </thead>
-        <tbody id="histoBody"></tbody>
-      </table>
-    </div>
-    <div id="histoEmpty" class="empty-state" style="display:none">Aucune entrée</div>
-  </div>
-</div>
-
-<!-- ═══════════ EFFICACITÉ ═══════════ -->
-<div class="panel" id="panel-efficacite">
-  <div class="stats-grid" id="statsGrid"></div>
-
-  <div class="card">
-    <div class="card-title">📊 Analyse par propriété</div>
-    <div id="efficaciteDetail"></div>
-  </div>
-</div>
-
-<!-- ═══════════ PROPRIÉTÉS ═══════════ -->
-<div class="panel" id="panel-proprietes">
-  <div class="card">
-    <div class="card-title">🏠 Mes propriétés</div>
-    <div id="propList"></div>
-    <hr class="divider">
-    <div class="section-title">Ajouter une propriété</div>
-    <div class="parsed-grid">
-      <div class="field-group">
-        <label class="field-label">Nom</label>
-        <input class="field-input" id="newPropName" placeholder="ex: Arcachon">
-      </div>
-      <div class="field-group">
-        <label class="field-label">Adresse</label>
-        <input class="field-input" id="newPropAddr" placeholder="1 Place du Dr Peyneau, Arcachon">
-      </div>
-      <div class="field-group">
-        <label class="field-label">Latitude</label>
-        <input class="field-input" id="newPropLat" type="number" step="0.000001">
-      </div>
-      <div class="field-group">
-        <label class="field-label">Longitude</label>
-        <input class="field-input" id="newPropLng" type="number" step="0.000001">
-      </div>
-    </div>
-    <button class="btn btn-primary" onclick="addPropriete()">Ajouter</button>
-  </div>
-</div>
+  </div><!-- hidden transcriptWrap kept for compat -->
+  <div id="transcriptWrap" style="display:none">
+    <input type="hidden" id="transcriptBox">
+  </div></div>
 
 </div><!-- /main -->
 
@@ -1266,6 +1118,10 @@ function sfStart(fieldId, btn) {
   };
 
   try { sfRecognition.start(); } catch(e) { btn.textContent = '🎙'; }
+}
+
+function toggleSurveiller(btn) {
+  btn.classList.toggle('active-surv');
 }
 
 function sfStop() {
@@ -1724,6 +1580,7 @@ function saveEntry() {
     date: now.toLocaleDateString('fr-FR'),
     heure: now.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}),
     propId: prop,
+    surveiller: document.getElementById('portSurveiller').classList.contains('active-surv'),
     propName: getPropName(prop),
     unite, lieu, portee, intervention, fourniture, cout
   };
@@ -1743,6 +1600,8 @@ function cancelEntry() {
     const v = document.getElementById('val_'+id);
     if (v) { v.textContent = '—'; v.className = 'sf-val'; }
   });
+  document.getElementById('portSurveiller').classList.remove('active-surv');
+  setPortee('ponctuel');
   portee = 'ponctuel';
   setPortee('ponctuel');
   resetKeywords();
