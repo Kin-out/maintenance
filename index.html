@@ -11,13 +11,13 @@
   --bg: #0f0f0d;
   --surface: #1a1a16;
   --surface2: #222220;
-  --border: #2e2e28;
+  --border: #3a3a34;
   --accent: #c8a96e;
   --accent2: #7eb8a4;
   --danger: #c47a6a;
-  --text: #e8e4d8;
-  --text2: #8a8678;
-  --text3: #5a5850;
+  --text: #f0ece0;
+  --text2: #b0aa98;
+  --text3: #808070;
   --radius: 10px;
   --mono: 'DM Mono', monospace;
   --serif: 'DM Serif Display', serif;
@@ -342,6 +342,22 @@ select.field-input { cursor: pointer; }
   background: #ff1100; transform: scale(1.15);
   box-shadow: 0 0 16px rgba(255,17,0,0.6);
 }
+
+/* LOCATION BUTTONS */
+.loc-btn {
+  padding: 8px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text2);
+  font-family: var(--mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.loc-btn:hover, .loc-btn.active { background: rgba(200,169,110,0.15); border-color: var(--accent); color: var(--accent); }
 
 /* ACTION BAR */
 .action-bar { border-top: 1px solid var(--border); padding-top: 16px; display: flex; flex-direction: column; gap: 12px; }
@@ -668,7 +684,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#00bbcc;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#cc9900;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -818,11 +834,23 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
       </div>
       <div class="field-group" style="grid-column:1/-1">
         <label class="field-label">Description</label>
-        <input class="field-input" id="rDesc" placeholder="ex: Cle a molette + scie sauteuse">
+        <div class="sf-input-row">
+          <div class="sf-val" id="val_rDesc">—</div>
+          <div id="vu_rDesc" class="vu-mini"><div class="vu-mini-bar"></div><div class="vu-mini-bar"></div><div class="vu-mini-bar"></div></div>
+          <button class="sf-mic" onmousedown="sfStart('rDesc',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('rDesc',this);" ontouchend="sfStop();">🎙</button>
+          <input type="hidden" id="rDesc">
+        </div>
       </div>
       <div class="field-group" style="grid-column:1/-1">
         <label class="field-label">Emplacement des équipements</label>
-        <input class="field-input" id="rEmplacement" placeholder="ex: Atelier Jouet, caisse rouge">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+          <button class="loc-btn" onclick="setEmplacement('Arcachon')">📍 Arcachon</button>
+          <button class="loc-btn" onclick="setEmplacement('Jouet')">📍 Jouet</button>
+          <button class="loc-btn" onclick="setEmplacement('Compiegne')">📍 Compiègne</button>
+          <button class="loc-btn" onclick="setEmplacement('Paris')">📍 Paris</button>
+        </div>
+        <div id="empSelected" style="margin-top:6px;font-size:12px;color:var(--accent)"></div>
+        <input type="hidden" id="rEmplacement">
       </div>
     </div>
     <button class="btn btn-primary" onclick="addRappel()">Ajouter</button>
@@ -864,6 +892,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
       </select>
       <input class="field-input" type="text" id="filtSearch" placeholder="Rechercher…" style="width:auto;flex:1" oninput="renderHistorique()">
       <button class="btn btn-secondary" onclick="exportExcel()">⬇ Export Excel</button>
+      <button class="btn btn-danger" onclick="clearAllEntries()">🗑 Tout effacer</button>
     </div>
   </div>
   <div class="card" style="padding:0 20px 20px">
@@ -1235,6 +1264,7 @@ function sfDrawVu(fieldId) {
   const data = new Uint8Array(sfAnalyser.frequencyBinCount);
   function frame() {
     sfVuFrame = requestAnimationFrame(frame);
+    if (!sfAnalyser) return;
     sfAnalyser.getByteFrequencyData(data);
     const avg = data.slice(0,8).reduce((s,v)=>s+v,0)/8/255;
     const bars = vuEl.querySelectorAll('.vu-mini-bar');
@@ -1844,6 +1874,22 @@ function saveEntry() {
   notify('✅ Intervention enregistrée dans le carnet');
 }
 
+function deleteEntry(id) {
+  if (!confirm('Supprimer cette ligne ?')) return;
+  entries = entries.filter(e => e.id !== id);
+  save('entries', entries);
+  renderHistorique();
+  notify('Ligne supprimee');
+}
+
+function clearAllEntries() {
+  if (!confirm('Effacer TOUT l historique ? Cette action est irreversible.')) return;
+  entries = [];
+  save('entries', entries);
+  renderHistorique();
+  notify('Historique efface');
+}
+
 function editEntry(id) {
   const entry = entries.find(e => e.id === id);
   if (!entry) return;
@@ -1896,16 +1942,30 @@ function cancelEntry() {
 // ═══════════════════════════════════════════
 // RAPPELS
 // ═══════════════════════════════════════════
+function setEmplacement(loc) {
+  document.getElementById('rEmplacement').value = loc;
+  document.getElementById('empSelected').textContent = '📍 ' + loc + ' sélectionné';
+  document.querySelectorAll('.loc-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
 function addRappel() {
   const prop = document.getElementById('rProp').value;
   const type = document.getElementById('rType').value;
-  const desc = document.getElementById('rDesc').value.trim();
+  const descHidden = document.getElementById('rDesc').value.trim();
+  const descDisplay = document.getElementById('val_rDesc') ? document.getElementById('val_rDesc').textContent.trim() : '';
+  const desc = descHidden || (descDisplay !== '—' ? descDisplay : '');
   const empl = document.getElementById('rEmplacement').value.trim();
-  if (!desc) { notify('⚠️ Veuillez saisir une description'); return; }
+  if (!desc) { notify('Veuillez saisir une description'); return; }
   rappels.push({ id: Date.now(), propId: prop, propName: getPropName(prop), type, desc, empl, done: false, created: new Date().toLocaleDateString('fr-FR') });
   save('rappels', rappels);
   document.getElementById('rDesc').value = '';
   document.getElementById('rEmplacement').value = '';
+  const vrd = document.getElementById('val_rDesc');
+  if (vrd) { vrd.textContent = '—'; vrd.className = 'sf-val'; }
+  const empSel = document.getElementById('empSelected');
+  if (empSel) empSel.textContent = '';
+  document.querySelectorAll('.loc-btn').forEach(b => b.classList.remove('active'));
   renderRappels();
   notify('📌 Rappel ajouté');
 }
@@ -2060,7 +2120,10 @@ function renderHistorique() {
       <td>${e.intervention}</td>
       <td>${e.fourniture||'—'}</td>
       <td>${e.cout ? e.cout.toFixed(2)+' €' : '—'}</td>
-      <td><button onclick="editEntry(${e.id})" style="background:none;border:1px solid var(--border);color:var(--text2);padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;font-family:var(--mono)">✏</button></td>
+      <td style="white-space:nowrap">
+        <button onclick="editEntry(${e.id})" style="background:none;border:1px solid var(--border);color:var(--text2);padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;font-family:var(--mono);margin-right:4px">✏</button>
+        <button onclick="deleteEntry(${e.id})" style="background:none;border:1px solid var(--danger);color:var(--danger);padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;font-family:var(--mono)">🗑</button>
+      </td>
     </tr>`).join('');
 }
 
@@ -2088,39 +2151,36 @@ function renderEfficacite() {
   const rate  = total ? Math.round(done/total*100) : 0;
   const totalCout = entries.reduce((s,e) => s + (e.cout||0), 0);
   const lastTime = load('lastCompiTime', 0);
-  document.getElementById('statsGrid').innerHTML = `
+  const sgEl = document.getElementById('statsGrid');
+  if (sgEl) sgEl.innerHTML = `
     <div class="stat-card"><span class="stat-val">${entries.length}</span><div class="stat-lbl">Interventions</div></div>
     <div class="stat-card"><span class="stat-val">${rate}%</span><div class="stat-lbl">Taux réalisation</div></div>
-    <div class="stat-card"><span class="stat-val">${totalCout.toFixed(0)}€</span><div class="stat-lbl">Total fournitures</div></div>
-    <div class="stat-card"><span class="stat-val">${lastTime ? Math.floor(lastTime/60)+'min' : '—'}</span><div class="stat-lbl">Dernier temps Compiègne</div></div>
+    <div class="stat-card"><span class="stat-val">${totalCout.toFixed(0)} €</span><div class="stat-lbl">Total fournitures</div></div>
+    <div class="stat-card"><span class="stat-val">${lastTime ? Math.floor(lastTime/60)+' min' : '—'}</span><div class="stat-lbl">⏱ Compiègne</div></div>
   `;
-
-  // Par propriété
+  // Analyse uniquement pour Compiègne
   const detail = document.getElementById('efficaciteDetail');
-  if (!validations.length) { detail.innerHTML = '<div class="empty-state">Aucune donnée de validation encore</div>'; return; }
-  const byProp = {};
-  validations.forEach(v => {
-    if (!byProp[v.propName]) byProp[v.propName] = { total:0, done:0, motifs:{} };
-    byProp[v.propName].total++;
-    if (v.status==='fait') byProp[v.propName].done++;
-    else {
-      byProp[v.propName].motifs[v.motif] = (byProp[v.propName].motifs[v.motif]||0)+1;
-    }
+  if (!detail) return;
+  const compiValid = validations.filter(v => v.propId === 'comp');
+  if (!compiValid.length) { detail.innerHTML = '<div class="empty-state">Aucune donnée pour Compiègne</div>'; return; }
+  const total2 = compiValid.length;
+  const done2  = compiValid.filter(v => v.status === 'fait').length;
+  const rate2  = Math.round(done2/total2*100);
+  const motifs = {};
+  compiValid.filter(v => v.status !== 'fait').forEach(v => {
+    motifs[v.motif] = (motifs[v.motif]||0)+1;
   });
-  detail.innerHTML = Object.entries(byProp).map(([name,d]) => {
-    const r = Math.round(d.done/d.total*100);
-    const motifsHtml = Object.entries(d.motifs).map(([m,c]) => `<span style="font-size:11px;color:var(--text3)">${m}: ${c}x</span>`).join(' · ');
-    return `<div style="margin-bottom:14px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-        <span style="color:var(--text);font-size:13px">${name}</span>
-        <span style="color:var(--accent)">${r}%</span>
-      </div>
-      <div style="background:var(--surface2);border-radius:4px;height:6px;overflow:hidden">
-        <div style="width:${r}%;height:100%;background:var(--accent2)"></div>
-      </div>
-      ${motifsHtml ? `<div style="margin-top:4px">${motifsHtml}</div>` : ''}
-    </div>`;
-  }).join('');
+  const motifsHtml = Object.entries(motifs).map(([m,c]) => `<span style="font-size:11px;color:var(--text3)">${m}: ${c}x</span>`).join(' · ');
+  detail.innerHTML = `<div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+      <span style="color:var(--text)">Compiègne</span>
+      <span style="color:var(--accent)">${rate2}% réalisé</span>
+    </div>
+    <div style="background:var(--surface2);border-radius:4px;height:8px;overflow:hidden">
+      <div style="width:${rate2}%;height:100%;background:var(--accent2)"></div>
+    </div>
+    ${motifsHtml ? `<div style="margin-top:8px">${motifsHtml}</div>` : ''}
+  </div>`;
 }
 
 // ═══════════════════════════════════════════
