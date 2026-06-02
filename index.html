@@ -179,6 +179,26 @@ body {
   color: var(--text3);
 }
 
+/* SAVE MAIN BUTTON */
+.save-main-btn {
+  width: 100%;
+  padding: 18px;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+.save-main-btn:hover { background: #d4b87a; transform: scale(1.01); }
+.save-main-btn:active { transform: scale(0.98); }
+
 /* VUMETRE */
 .vumeter {
   display: none;
@@ -280,6 +300,43 @@ select.field-input { cursor: pointer; }
 .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
 .btn-danger:hover { background: rgba(196,122,106,0.1); }
 .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* TAP FIELDS */
+.tap-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 52px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.tap-field:active { transform: scale(0.98); }
+.tap-field.selected {
+  border-color: var(--accent);
+  background: rgba(200,169,110,0.08);
+}
+.tap-field.listening {
+  border-color: #cc2200;
+  background: rgba(204,34,0,0.12);
+  animation: pulse 1s infinite;
+}
+.tap-val {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text3);
+  flex: 1;
+  font-style: italic;
+}
+.tap-val.filled { color: var(--text); font-style: normal; }
+.tap-icon { font-size: 16px; margin-left: 8px; opacity: 0.4; transition: opacity 0.2s; }
+.tap-field.selected .tap-icon { opacity: 1; }
+.tap-field.listening .tap-icon { opacity: 1; }
 
 /* FIELD MIC */
 .field-mic {
@@ -558,7 +615,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ccdd00;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ffaacc;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -623,9 +680,14 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
           <div class="vu-bar" id="vb10"></div><div class="vu-bar" id="vb11"></div>
         </div>
       </div>
-      <!-- BOUTON EN BAS -->
-      <button class="record-btn" id="recordBtn" onclick="toggleRecording()">🎙</button>
-      <div class="record-label" id="recordLabel">Appuyer pour dicter</div>
+      <!-- BOUTON MIC CENTRAL + SAVE -->
+      <div id="activeFieldLabel" style="text-align:center;font-size:12px;color:var(--text3);margin-bottom:10px;letter-spacing:0.08em;text-transform:uppercase;min-height:18px"></div>
+      <button class="record-btn" id="recordBtn" onmousedown="startFieldMic()" onmouseup="stopFieldMic()" onmouseleave="stopFieldMic()" ontouchstart="startFieldMic(event)" ontouchend="stopFieldMic()">🎙</button>
+      <div class="record-label" id="recordLabel">Sélectionner un champ puis maintenir</div>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button class="save-main-btn" onclick="saveEntry()">💾 Sauvegarder</button>
+        <button class="btn btn-secondary" style="padding:14px 20px" onclick="cancelEntry()">✕</button>
+      </div>
     </div>
 
     <div id="transcriptWrap" style="display:none">
@@ -640,24 +702,44 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
           <select class="field-input" id="fProp"></select>
         </div>
         <div class="field-group">
-          <label class="field-label">Pièce <button class="field-mic" onclick="dictateField('fUnite','pièce')">🎙</button></label>
-          <input class="field-input" id="fUnite" placeholder="ex: Chambre 2, Studio 3…">
+          <label class="field-label">Pièce</label>
+          <div class="tap-field" id="tap_fUnite" onclick="selectField('fUnite')" ondblclick="selectField('fUnite')",'Pièce','piece')">
+            <span class="tap-val" id="val_fUnite">Double-tap pour sélectionner</span>
+            <span class="tap-icon">🎙</span>
+            <input type="hidden" id="fUnite">
+          </div>
         </div>
         <div class="field-group" id="fLieuGroup">
-          <label class="field-label">Situation géographique <button class="field-mic" onclick="dictateField('fLieu','lieu')">🎙</button></label>
-          <input class="field-input" id="fLieu" placeholder="ex: Compiègne bât A, 24 Bagnolet RdC…">
+          <label class="field-label">Situation géographique</label>
+          <div class="tap-field" id="tap_fLieu" onclick="selectField('fLieu')" ondblclick="selectField('fLieu')",'Situation géographique','lieu')">
+            <span class="tap-val" id="val_fLieu">Double-tap pour sélectionner</span>
+            <span class="tap-icon">🎙</span>
+            <input type="hidden" id="fLieu">
+          </div>
         </div>
         <div class="field-group">
-          <label class="field-label">Intervention <button class="field-mic" onclick="dictateField('fIntervention','intervention')">🎙</button></label>
-          <input class="field-input" id="fIntervention" placeholder="ex: Changement mitigeur">
+          <label class="field-label">Intervention</label>
+          <div class="tap-field" id="tap_fIntervention" onclick="selectField('fIntervention')" ondblclick="selectField('fIntervention')",'Intervention','intervention')">
+            <span class="tap-val" id="val_fIntervention">Double-tap pour sélectionner</span>
+            <span class="tap-icon">🎙</span>
+            <input type="hidden" id="fIntervention">
+          </div>
         </div>
         <div class="field-group">
-          <label class="field-label">Fourniture <button class="field-mic" onclick="dictateField('fFourniture','fourniture')">🎙</button></label>
-          <input class="field-input" id="fFourniture" placeholder="ex: Tête de mitigeur">
+          <label class="field-label">Fourniture</label>
+          <div class="tap-field" id="tap_fFourniture" onclick="selectField('fFourniture')" ondblclick="selectField('fFourniture')",'Fourniture','fourniture')">
+            <span class="tap-val" id="val_fFourniture">Double-tap pour sélectionner</span>
+            <span class="tap-icon">🎙</span>
+            <input type="hidden" id="fFourniture">
+          </div>
         </div>
         <div class="field-group">
-          <label class="field-label">Coût (€) <button class="field-mic" onclick="dictateField('fCout','cout')">🎙</button></label>
-          <input class="field-input" id="fCout" type="number" placeholder="0.00" step="0.01">
+          <label class="field-label">Coût (€)</label>
+          <div class="tap-field" id="tap_fCout" onclick="selectField('fCout')" ondblclick="selectField('fCout')",'Coût','cout')">
+            <span class="tap-val" id="val_fCout">Double-tap pour sélectionner</span>
+            <span class="tap-icon">🎙</span>
+            <input type="hidden" id="fCout">
+          </div>
         </div>
       </div>
 
@@ -1082,6 +1164,167 @@ function resetKeywords() {
     .forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('lit'); });
 }
 
+// OPTION C — sélection champ + bouton micro central
+let selectedFieldId = null;
+let selectedFieldLabel = '';
+let lastTapTime = {};
+
+function selectField(fieldId) {
+  const now = Date.now();
+  const last = lastTapTime[fieldId] || 0;
+  const isDouble = (now - last) < 400;
+  lastTapTime[fieldId] = now;
+
+  // Simple tap — sélectionner
+  document.querySelectorAll('.tap-field').forEach(t => t.classList.remove('selected'));
+  const tapEl = document.getElementById('tap_'+fieldId);
+  tapEl.classList.add('selected');
+  selectedFieldId = fieldId;
+
+  const labels = {fLieu:'Situation géographique', fUnite:'Pièce', fIntervention:'Intervention', fFourniture:'Fourniture', fCout:'Coût'};
+  selectedFieldLabel = labels[fieldId] || fieldId;
+  document.getElementById('activeFieldLabel').textContent = '▶ ' + selectedFieldLabel + ' sélectionné';
+  document.getElementById('recordLabel').textContent = 'Maintenir le bouton pour dicter';
+}
+
+function startFieldMic(e) {
+  if (e) e.preventDefault();
+  if (!selectedFieldId) { notify('Sélectionner d'abord un champ'); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { notify('Dictée non disponible'); return; }
+  if (fieldRecognition) { try { fieldRecognition.abort(); } catch(ex){} fieldRecognition = null; }
+
+  const tapEl = document.getElementById('tap_'+selectedFieldId);
+  const valEl = document.getElementById('val_'+selectedFieldId);
+  tapEl.classList.add('listening');
+  document.getElementById('recordBtn').classList.add('recording');
+  document.getElementById('recordLabel').textContent = 'En écoute… (relâcher pour valider)';
+  valEl.textContent = '🎙 En écoute…';
+  valEl.className = 'tap-val';
+
+  fieldRecognition = new SR();
+  fieldRecognition.lang = 'fr-FR';
+  fieldRecognition.continuous = true;
+  fieldRecognition.interimResults = true;
+  let finalText = '';
+
+  fieldRecognition.onresult = (ev) => {
+    let interim = '';
+    for (let i=0; i<ev.results.length; i++) {
+      if (ev.results[i].isFinal) finalText += ev.results[i][0].transcript + ' ';
+      else interim += ev.results[i][0].transcript;
+    }
+    valEl.textContent = '🎙 ' + (finalText + interim).trim();
+  };
+
+  fieldRecognition.onend = () => {
+    tapEl.classList.remove('listening');
+    document.getElementById('recordBtn').classList.remove('recording');
+    document.getElementById('recordLabel').textContent = 'Maintenir le bouton pour dicter';
+    const txt = finalText.trim();
+    if (txt) {
+      if (selectedFieldId === 'fCout') {
+        const conv = wordsToNum(normalizeStr(txt));
+        const m = conv.match(/(\d+[.,]?\d*)/) || txt.match(/(\d+)/);
+        const val = m ? m[1].replace(',','.') : txt;
+        document.getElementById(selectedFieldId).value = val;
+        valEl.textContent = val + ' €';
+      } else {
+        document.getElementById(selectedFieldId).value = txt;
+        valEl.textContent = txt;
+      }
+      valEl.className = 'tap-val filled';
+      notify('✅ ' + selectedFieldLabel + ' enregistré');
+    } else {
+      valEl.textContent = document.getElementById(selectedFieldId).value || 'Double-tap pour sélectionner';
+      valEl.className = document.getElementById(selectedFieldId).value ? 'tap-val filled' : 'tap-val';
+    }
+    fieldRecognition = null;
+  };
+  fieldRecognition.onerror = (ev) => {
+    if (ev.error === 'aborted') return;
+    tapEl.classList.remove('listening');
+    document.getElementById('recordBtn').classList.remove('recording');
+    fieldRecognition = null;
+  };
+  try { fieldRecognition.start(); } catch(ex) {}
+}
+
+function stopFieldMic() {
+  if (fieldRecognition) { try { fieldRecognition.stop(); } catch(e){} }
+}
+
+// PUSH TO TALK — appuyer = écoute, relâcher = stop
+function pttStart(fieldId, label) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { notify('Dictée non disponible'); return; }
+  if (fieldRecognition) { try { fieldRecognition.abort(); } catch(e){} fieldRecognition = null; }
+
+  const tapEl = document.getElementById('tap_'+fieldId);
+  const valEl = document.getElementById('val_'+fieldId);
+
+  tapEl.classList.add('listening');
+  valEl.textContent = '🎙 En écoute…';
+  valEl.className = 'tap-val';
+  activeFieldMic = fieldId;
+
+  fieldRecognition = new SR();
+  fieldRecognition.lang = 'fr-FR';
+  fieldRecognition.continuous = true;
+  fieldRecognition.interimResults = true;
+
+  let finalText = '';
+
+  fieldRecognition.onresult = (e) => {
+    let interim = '';
+    for (let i=0; i<e.results.length; i++) {
+      if (e.results[i].isFinal) finalText += e.results[i][0].transcript + ' ';
+      else interim += e.results[i][0].transcript;
+    }
+    valEl.textContent = '🎙 ' + (finalText + interim).trim();
+  };
+
+  fieldRecognition.onend = () => {
+    tapEl.classList.remove('listening');
+    activeFieldMic = null;
+    const txt = finalText.trim() || valEl.textContent.replace('🎙 ','').replace('En écoute…','').trim();
+    if (txt) {
+      if (fieldId === 'fCout') {
+        const conv = wordsToNum(normalizeStr(txt));
+        const m = conv.match(/(\d+[.,]?\d*)/) || txt.match(/(\d+)/);
+        const val = m ? m[1].replace(',','.') : '';
+        document.getElementById(fieldId).value = val;
+        valEl.textContent = val ? val + ' €' : txt;
+      } else {
+        document.getElementById(fieldId).value = txt;
+        valEl.textContent = txt;
+      }
+      valEl.className = 'tap-val filled';
+    } else {
+      valEl.textContent = document.getElementById(fieldId).value || 'Double-tap pour sélectionner';
+      valEl.className = document.getElementById(fieldId).value ? 'tap-val filled' : 'tap-val placeholder';
+    }
+    fieldRecognition = null;
+  };
+
+  fieldRecognition.onerror = (e) => {
+    if (e.error === 'aborted') return;
+    tapEl.classList.remove('listening');
+    activeFieldMic = null;
+    fieldRecognition = null;
+    valEl.textContent = document.getElementById(fieldId).value || 'Double-tap pour sélectionner';
+    valEl.className = 'tap-val placeholder';
+  };
+
+  try { fieldRecognition.start(); } catch(e) { tapEl.classList.remove('listening'); }
+}
+
+function pttStop(fieldId) {
+  if (fieldRecognition && activeFieldMic === fieldId) {
+    try { fieldRecognition.stop(); } catch(e) {}
+  }
+}
+
 // Dictée ciblée sur un champ
 let fieldRecognition = null;
 let activeFieldMic = null;
@@ -1397,11 +1640,11 @@ function cancelEntry() {
   accumulatedText = '';
   document.getElementById('transcriptBox').textContent = '';
   document.getElementById('transcriptWrap').style.display = 'none';
-  document.getElementById('fIntervention').value = '';
-  document.getElementById('fFourniture').value = '';
-  document.getElementById('fCout').value = '';
-  document.getElementById('fLieu').value = '';
-  document.getElementById('fUnite').value = '';
+  ['fIntervention','fFourniture','fCout','fLieu','fUnite'].forEach(id => {
+    document.getElementById(id).value = '';
+    const v = document.getElementById('val_'+id);
+    if (v) { v.textContent = 'Double-tap pour sélectionner'; v.className = 'tap-val placeholder'; }
+  });
   portee = 'ponctuel';
   setPortee('ponctuel');
   resetKeywords();
