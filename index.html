@@ -558,7 +558,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ff8800;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ccdd00;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -1062,7 +1062,7 @@ function highlightKeywords(txt) {
   const lower = txt.toLowerCase();
   const map = {
     kw_lieu:         ['lieu','adresse','compiègne','jouet','arcachon','paris','bâtiment','immeuble'],
-    kw_unite:        ['pièce','chambre','salle','cuisine','couloir','bureau','wc','garage','cave','grenier','salon','studio','appt','appartement'],
+    kw_unite:        ['piece'],
     kw_intervention: ['intervention','réparé','changé','installé','remplacé','posé','fixé','nettoyé','inspecté','contrôlé','testé','peint','percé','scellé','graissé','réglé','serré'],
     kw_fourniture:   ['fourniture','matériau','acheté','joint','silicone','colle','vis','cheville','câble','interrupteur','ampoule','filtre','siphon','raccord','dalle','carrelage'],
     kw_cout:         ['euro','coût','coute','coûte','prix','payé'],
@@ -1335,16 +1335,24 @@ function parseTranscript(txt) {
     }
   });
 
-  // Coût — depuis texte converti, cherche nombre + euro ou € ou cout
-  const costNorm = normalizeStr(txt);
-  const costConv = wordsToNum(costNorm);
-  // Cherche nombre suivi de euro/euros/€
-  const costMatch = costConv.match(/(\d+[.,]?\d*)\s*(?:euro[s]?|e\b)/)
-    || costConv.match(/cout\s+(\d+[.,]?\d*)/)
-    || costNorm.match(/(\d+)\s*(?:euro|euros|€)/);
+  // Coût — détecte nombre + euro/€/cout dans le texte original et converti
+  const costRaw = txt;
+  const costNorm2 = normalizeStr(txt);
+  const costConv2 = wordsToNum(costNorm2);
+  const costMatch =
+    costRaw.match(/(\d+[.,]?\d*)\s*[€]/) ||
+    costConv2.match(/(\d+[.,]?\d*)\s*euro/) ||
+    costNorm2.match(/(\d+[.,]?\d*)\s*euro/) ||
+    costConv2.match(/cout\s+(\d+[.,]?\d*)/);
   if (costMatch) {
     const val = (costMatch[1]||costMatch[2]||'').replace(',','.');
     if (val) document.getElementById('fCout').value = val;
+  }
+  // Nettoyer la fourniture si elle contient le coût
+  const fourVal = document.getElementById('fFourniture').value;
+  if (fourVal) {
+    const cleaned = fourVal.replace(/\s*(pour un|a un|un|de)\s+\d+.*$/i,'').trim();
+    document.getElementById('fFourniture').value = cleaned;
   }
 }
 
