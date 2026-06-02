@@ -153,20 +153,25 @@ body {
 /* KEYWORD TAGS */
 .kw-tag {
   border-radius: 4px;
-  padding: 3px 9px;
-  font-size: 11px;
+  padding: 4px 10px;
+  font-size: 12px;
   font-family: var(--mono);
-  transition: all 0.3s;
-  opacity: 0.4;
-}
-.kw-gold { background: rgba(200,169,110,0.12); color: var(--accent); }
-.kw-teal { background: rgba(126,184,164,0.12); color: var(--accent2); }
-.kw-tag.lit {
+  font-weight: 500;
+  transition: all 0.4s;
   opacity: 1;
-  transform: scale(1.08);
-  box-shadow: 0 0 8px rgba(200,169,110,0.4);
+  color: #ffffff;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
 }
-.kw-teal.lit { box-shadow: 0 0 8px rgba(126,184,164,0.4); }
+.kw-gold { color: #fff; }
+.kw-teal { color: #fff; }
+.kw-tag.lit {
+  opacity: 0.2;
+  transform: scale(0.92);
+  border-color: transparent;
+  background: rgba(255,255,255,0.04);
+  color: var(--text3);
+}
 
 /* VUMETRE */
 .vumeter {
@@ -533,7 +538,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#cc0088;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ff66bb;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -981,6 +986,7 @@ function setupRecognition() {
 
   let silenceTimer = null;
 
+  let accumulatedText = '';
   recognition.onresult = (e) => {
     let finalTxt = '';
     let interimTxt = '';
@@ -988,10 +994,18 @@ function setupRecognition() {
       if (e.results[i].isFinal) finalTxt += e.results[i][0].transcript + ' ';
       else interimTxt += e.results[i][0].transcript;
     }
+    if (finalTxt) accumulatedText = (accumulatedText + ' ' + finalTxt).trim();
+    const displayTxt = accumulatedText + (interimTxt ? ' ' + interimTxt : '');
+    // Afficher dans la boite
     const box = document.getElementById('transcriptBox');
-    if (finalTxt) box.textContent = (box.textContent + ' ' + finalTxt).trim();
-    // Highlight sur tout ce qui est dit (final + interim)
-    highlightKeywords((box.textContent + ' ' + interimTxt).toLowerCase());
+    box.textContent = displayTxt;
+    // Mots clés
+    highlightKeywords(displayTxt.toLowerCase());
+    // Remplir champs en temps réel
+    if (accumulatedText) {
+      parseTranscript(accumulatedText);
+      document.getElementById('transcriptWrap').style.display = 'block';
+    }
     // Reset silence timer — 5 secondes
     if (silenceTimer) clearTimeout(silenceTimer);
     silenceTimer = setTimeout(() => {
@@ -1061,11 +1075,10 @@ function finishRecording() {
   userStoppedRecording = false;
   stopVumeter();
   setRecordIdle();
-  const txt = document.getElementById('transcriptBox').textContent.trim();
+  const txt = accumulatedText || document.getElementById('transcriptBox').textContent.trim();
   if (txt) {
     parseTranscript(txt);
     checkPortee(txt);
-    // Show save/cancel buttons
     document.getElementById('transcriptWrap').style.display = 'block';
   }
 }
@@ -1081,6 +1094,7 @@ function toggleRecording() {
     // Démarrage
     userStoppedRecording = false;
     document.getElementById('transcriptBox').textContent = '';
+    accumulatedText = '';
     resetKeywords();
     // Démarrer IMMÉDIATEMENT (Safari iOS exige action utilisateur directe)
     try {
