@@ -707,7 +707,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">🏠 Le Régisseur <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ec4899;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">🏠 Le Régisseur <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#84cc16;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -1408,8 +1408,21 @@ function sfStopVu() {
 
 function sfStart(fieldId, btn) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { alert('Micro non disponible sur ce navigateur'); return; }
-  if (sfRecognition) { try { sfRecognition.abort(); } catch(e){} sfRecognition=null; }
+  if (!SR) { alert('Micro non disponible'); return; }
+  // Nettoyer proprement la reconnaissance precedente
+  if (sfRecognition) {
+    sfRecognition.onresult = null;
+    sfRecognition.onend = null;
+    sfRecognition.onerror = null;
+    try { sfRecognition.abort(); } catch(e){}
+    sfRecognition = null;
+  }
+  // Nettoyer le bouton precedent
+  if (sfCurrentBtn && sfCurrentBtn !== btn) {
+    sfCurrentBtn.classList.remove('listening');
+    sfCurrentBtn.textContent = '🎙';
+  }
+  sfStopVu();
   sfStopping = false;
   sfCurrentField = fieldId;
   sfCurrentBtn = btn;
