@@ -538,7 +538,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ff66bb;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3344ff;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -579,7 +579,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
           <span id="kw_fourniture"   class="kw-tag kw-gold">fourniture</span>
           <span id="kw_cout"         class="kw-tag kw-gold">coût … euros</span>
           <span id="kw_lieu"         class="kw-tag kw-gold">dans … (lieu)</span>
-          <span id="kw_unite"        class="kw-tag kw-teal">unité / logement</span>
+          <span id="kw_unite"        class="kw-tag kw-teal">pièce</span>
           <span id="kw_ponctuel"     class="kw-tag kw-teal">ponctuel</span>
           <span id="kw_global"       class="kw-tag kw-teal">global</span>
         </div>
@@ -621,12 +621,12 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
           <select class="field-input" id="fProp"></select>
         </div>
         <div class="field-group">
-          <label class="field-label">Unité / Logement</label>
-          <input class="field-input" id="fUnite" placeholder="ex: Appt 3, Chambre 2…">
+          <label class="field-label">Pièce</label>
+          <input class="field-input" id="fUnite" placeholder="ex: Chambre 2, Studio 3…">
         </div>
         <div class="field-group" id="fLieuGroup">
-          <label class="field-label">Lieu précis</label>
-          <input class="field-input" id="fLieu" placeholder="ex: Salle de bain 1">
+          <label class="field-label">Situation géographique</label>
+          <input class="field-input" id="fLieu" placeholder="ex: Compiègne bât A, 24 Bagnolet RdC…">
         </div>
         <div class="field-group">
           <label class="field-label">Intervention</label>
@@ -1173,40 +1173,51 @@ function checkPortee(txt) {
 }
 
 function wordsToNum(str) {
-  const map = {'zero':0,'zéro':0,'un':1,'une':1,'deux':2,'trois':3,'quatre':4,'cinq':5,'six':6,
+  const map = {'zéro':0,'zero':0,'un':1,'une':1,'deux':2,'trois':3,'quatre':4,'cinq':5,'six':6,
     'sept':7,'huit':8,'neuf':9,'dix':10,'onze':11,'douze':12,'treize':13,
     'quatorze':14,'quinze':15,'seize':16,'vingt':20,'trente':30,'quarante':40,
-    'cinquante':50,'soixante':60,'cent':100};
+    'cinquante':50,'soixante':60,'cent':100,'mille':1000};
   let s = str.toLowerCase();
   Object.entries(map).forEach(([w,n]) => {
     s = s.replace(new RegExp('\b'+w+'\b','g'), ' '+n+' ');
   });
-  s = s.replace(/\s*(\d+)\s+(\d+)\s*/g, (m,a,b) => {
-    const A=parseInt(a), B=parseInt(b);
-    if (A >= 10 && B < 10) return ' '+(A+B)+' ';
-    return ' '+a+b+' ';
-  });
+  // Combine adjacent numbers (ex: "vingt cinq" -> 25)
+  for (let i=0; i<3; i++) {
+    s = s.replace(/\s*(\d+)\s+(\d+)\s*/g, (m,a,b) => {
+      const A=parseInt(a), B=parseInt(b);
+      if (A>=10 && B<10) return ' '+(A+B)+' ';
+      if (A<10 && B>=10) return ' '+(A*B)+' ';
+      return ' '+a+b+' ';
+    });
+  }
   return s.trim();
 }
 
 function parseTranscript(txt) {
+  if (!txt) return;
   const lower = txt.toLowerCase();
   const converted = wordsToNum(lower);
 
-  // COÛT
+  // COÛT — nombre + euro (avec ou sans mot clé "coût")
   const costMatch = converted.match(/(\d+[.,]?\d*)\s*euro/)
     || lower.match(/(\d+[.,]?\d*)\s*euro/);
   if (costMatch) document.getElementById('fCout').value = costMatch[1].replace(',','.');
 
-  // FOURNITURE
-  const fourMatch = lower.match(/(?:fourniture[s]?|matériau[x]?|acheté|avec)\s*:?\s*([^,.\d][^,.]{2,50}?)(?=,|\.|\d|coût|euro|pour|$)/i);
+  // FOURNITURE — après "fourniture", "acheté", "avec", "une", "un" + objet avant "euro" ou virgule
+  // Si pas de mot clé, tout ce qui précède "euro" et qui n'est pas un chiffre est la fourniture
+  const fourMatch = lower.match(/(?:fourniture[s]?|acheté|achat)\s*:?\s*([^,.\d][^,.]{2,60}?)(?=,|\.|coût|euro|\d|$)/i)
+    || lower.match(/(?:une?|des?)\s+([a-zàâéèêëîïôùûüç][^,.\d]{2,40}?)\s+(?:à|pour|coûte?|valant)?\s*(?:\d)/i);
   if (fourMatch) document.getElementById('fFourniture').value = fourMatch[1].trim();
 
-  // LIEU
-  const lieuMatch = lower.match(/(?:dans|au niveau de|au|à la|à l[e'])\s+(?:la |le |l')?([^,.]{3,40}?)(?=,|\.|$)/i);
+  // SITUATION GÉO — après "à", "au", "dans", "sur le", "chez"
+  const lieuMatch = lower.match(/(?:dans|au niveau de|au|à la|à l[e']|sur le|chez)\s+(?:la |le |l')?([^,.]{3,50}?)(?=,|\.|$)/i);
   if (lieuMatch) document.getElementById('fLieu').value = lieuMatch[1].trim();
 
-  // INTERVENTION
+  // PIÈCE — numéro de pièce, chambre, studio, appt
+  const pieceMatch = lower.match(/(?:pièce|chambre|studio|appartement|appt|logement|habitation)\s*(?:numéro|n°|num)?\s*([a-z0-9\s]{1,10}?)(?=,|\.|$)/i);
+  if (pieceMatch) document.getElementById('fUnite').value = pieceMatch[0].trim();
+
+  // INTERVENTION — première phrase
   document.getElementById('fIntervention').value = txt.split(/[,.]/)[0].trim();
 }
 
@@ -1247,6 +1258,8 @@ function saveEntry() {
 }
 
 function cancelEntry() {
+  // Reset complet — texte, mémoire, champs
+  accumulatedText = '';
   document.getElementById('transcriptBox').textContent = '';
   document.getElementById('transcriptWrap').style.display = 'none';
   document.getElementById('fIntervention').value = '';
@@ -1256,7 +1269,7 @@ function cancelEntry() {
   document.getElementById('fUnite').value = '';
   portee = 'ponctuel';
   setPortee('ponctuel');
-  // Remettre le bouton micro en état initial
+  resetKeywords();
   setRecordIdle();
   isRecording = false;
   userStoppedRecording = false;
