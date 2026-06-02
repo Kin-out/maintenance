@@ -544,7 +544,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#eeeecc;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#cc4422;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -1205,11 +1205,11 @@ function parseTranscript(txt) {
 
   // Mots déclencheurs par champ
   const triggers = {
-    lieu:         ['lieu','adresse','propriété','bâtiment','immeuble','à compiègne','à jouet','à arcachon','à paris','dans le bâtiment'],
-    piece:        ['pièce','chambre','salle','cuisine','couloir','bureau','wc','toilette','garage','cave','grenier','salon','studio','appt','appartement'],
-    intervention: ['intervention','j'ai','j ai','changé','réparé','installé','remplacé','posé','fixé','nettoyé','vérifié','débouché'],
-    fourniture:   ['fourniture','acheté','matériau','pièce détachée','joint','vis','tuyau','robinet','vmc','mitigeur'],
-    cout:         ['euro','euros','coûte','coût','coute','prix','payé']
+    lieu:         ['lieu','adresse','propriete','batiment','immeuble','compiegne','jouet','arcachon','paris'],
+    piece:        ['piece','chambre','salle','cuisine','couloir','bureau','wc','toilette','garage','cave','grenier','salon','studio','appt','appartement'],
+    intervention: ['intervention','j ai','change','repare','installe','remplace','pose','fixe','nettoye','verifie','controle','inspecte'],
+    fourniture:   ['fourniture','achete','materiau','joint','vis','tuyau','robinet','vmc','mitigeur','cable','ampoule','filtre'],
+    cout:         ['euro','euros','cout','coute','prix','paye']
   };
 
   // Cherche chaque champ
