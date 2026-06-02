@@ -654,7 +654,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#dd5500;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#667700;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -1074,20 +1074,23 @@ function sfStart(fieldId, btn) {
 
   sfRecognition = new SR();
   sfRecognition.lang = 'fr-FR';
-  sfRecognition.continuous = true;
-  sfRecognition.interimResults = true;
+  sfRecognition.continuous = false; // iOS compatibility
+  sfRecognition.interimResults = false;
   let finalTxt = '';
+  let sfStopping = false;
 
   sfRecognition.onresult = function(e) {
-    let interim = '';
     for (let i = 0; i < e.results.length; i++) {
       if (e.results[i].isFinal) finalTxt += e.results[i][0].transcript + ' ';
-      else interim += e.results[i][0].transcript;
     }
-    valEl.textContent = (finalTxt + interim).trim() || '...';
+    valEl.textContent = finalTxt.trim() || '...';
   };
 
   sfRecognition.onend = function() {
+    // Si le bouton est encore enfonce, relancer (iOS coupe apres silence)
+    if (btn.classList.contains('listening') && !sfStopping) {
+      try { sfRecognition.start(); return; } catch(e) {}
+    }
     btn.classList.remove('listening');
     btn.textContent = '🎙';
     const txt = finalTxt.trim();
@@ -1130,8 +1133,12 @@ function toggleSurveiller(btn) {
 }
 
 function sfStop() {
-  if (sfRecognition) { try { sfRecognition.stop(); } catch(e){} }
+  if (sfRecognition) {
+    sfStopping = true;
+    try { sfRecognition.stop(); } catch(e) {}
+  }
 }
+let sfStopping = false;
 
 // OPTION C — sélection champ + bouton micro central
 let selectedFieldId = null;
@@ -1451,22 +1458,37 @@ function checkPortee(txt) {
 }
 
 function wordsToNum(str) {
-  const map = {'zero':0,'un':1,'une':1,'deux':2,'trois':3,'quatre':4,'cinq':5,'six':6,
-    'sept':7,'huit':8,'neuf':9,'dix':10,'onze':11,'douze':12,'treize':13,
-    'quatorze':14,'quinze':15,'seize':16,'vingt':20,'trente':30,'quarante':40,
-    'cinquante':50,'soixante':60,'cent':100,'mille':1000};
+  // Convertit les centimes: "dix huit euros cinquante" -> "18.50 euros"
   let s = str.toLowerCase();
-  Object.entries(map).forEach(([w,n]) => {
+  
+  const units = {'zero':0,'un':1,'une':1,'deux':2,'trois':3,'quatre':4,'cinq':5,'six':6,
+    'sept':7,'huit':8,'neuf':9,'dix':10,'onze':11,'douze':12,'treize':13,
+    'quatorze':14,'quinze':15,'seize':16};
+  const tens = {'vingt':20,'trente':30,'quarante':40,'cinquante':50,'soixante':60,'soixante-dix':70,'quatre-vingt':80,'quatre-vingt-dix':90};
+  const big = {'cent':100,'mille':1000};
+  
+  // Detecte pattern "X euros cinquante/vingt/etc" -> X.50 euros
+  s = s.replace(/(\d+)\s+euros?\s+(cinquante|quarante|trente|vingt|dix|quinze|douze|onze|dix)/gi, (m, euros, cents) => {
+    const cmap = {'cinquante':50,'quarante':40,'trente':30,'vingt':20,'dix':10,'quinze':15,'douze':12,'onze':11};
+    const c = cmap[cents.toLowerCase()] || 0;
+    return euros + '.' + c + ' euros';
+  });
+  
+  // Remplace mots par chiffres
+  const allMap = {...units, ...tens, ...big};
+  Object.entries(allMap).forEach(([w,n]) => {
     s = s.replace(new RegExp('\\b'+w+'\\b','g'), ' '+n+' ');
   });
-  for (let i=0; i<3; i++) {
-    s = s.replace(/\s*(\d+)\s+(\d+)\s*/g, (m,a,b) => {
-      const A=parseInt(a), B=parseInt(b);
-      if (A>=10 && B<10) return ' '+(A+B)+' ';
-      if (A<10 && B>=10) return ' '+(A*B)+' ';
-      return ' '+a+b+' ';
-    });
-  }
+  
+  // Combine: "10 8" -> 18, "10 50" -> garde séparé (c'est des centimes)
+  s = s.replace(/\s*(\d+)\s+(\d+)\s*/g, (m,a,b) => {
+    const A=parseInt(a), B=parseInt(b);
+    if (A>=10 && B<10) return ' '+(A+B)+' ';   // 10+8=18
+    if (A<10 && B===10) return ' '+(A*10)+' ';  // 2*10=20
+    if (A<10 && B>=20) return ' '+(A*100+B)+' '; // 2*100+50=250
+    return ' '+a+' '+b+' '; // garder séparé
+  });
+  
   return s.trim();
 }
 
@@ -1571,14 +1593,26 @@ function setPortee(p) {
 // ═══════════════════════════════════════════
 // SAUVEGARDE ENTRÉE
 // ═══════════════════════════════════════════
+function getFieldVal(id) {
+  // Try hidden input first, then val display
+  const hidden = document.getElementById(id);
+  if (hidden && hidden.value) return hidden.value;
+  const display = document.getElementById('val_'+id);
+  if (display && display.textContent && display.textContent !== '—' && display.textContent !== '...') {
+    return display.textContent.replace(' euros','').trim();
+  }
+  return '';
+}
+
 function saveEntry() {
   const prop = document.getElementById('fProp').value;
-  const unite = document.getElementById('fUnite').value;
-  const lieu = document.getElementById('fLieu').value;
-  const intervention = document.getElementById('fIntervention').value;
-  const fourniture = document.getElementById('fFourniture').value;
-  const cout = parseFloat(document.getElementById('fCout').value) || 0;
-  if (!intervention) { notify('Veuillez renseigner une intervention'); return; }
+  const unite = getFieldVal('fUnite');
+  const lieu = getFieldVal('fLieu');
+  const intervention = getFieldVal('fIntervention');
+  const fourniture = getFieldVal('fFourniture');
+  const coutRaw = getFieldVal('fCout');
+  const cout = parseFloat(coutRaw) || 0;
+  if (!intervention || intervention === '—') { notify('Veuillez renseigner une intervention'); return; }
   const now = new Date();
   const entry = {
     id: Date.now(),
