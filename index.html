@@ -314,6 +314,20 @@ select.field-input { cursor: pointer; }
 .sf-val { flex: 1; font-family: var(--mono); font-size: 14px; color: var(--text3); }
 .sf-val.filled { color: var(--text); }
 .sf-val.listening { color: var(--accent); }
+.vu-mini {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 24px;
+  padding: 0 4px;
+}
+.vu-mini-bar {
+  width: 6px;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--border);
+  transition: background 0.1s;
+}
 .sf-mic {
   width: 48px; height: 48px; border-radius: 50%;
   background: #cc2200; border: none; color: white;
@@ -654,7 +668,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#667700;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#00ccff;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -698,7 +712,12 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <label class="sf-label">Situation géographique</label>
         <div class="sf-input-row">
           <div class="sf-val" id="val_fLieu">—</div>
-          <button class="sf-mic" onmousedown="sfStart('fLieu',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fLieu',this);" ontouchend="sfStop();">🎙</button>
+          <div id="vu_fLieu" class="vu-mini">
+              <div class="vu-mini-bar"></div>
+              <div class="vu-mini-bar"></div>
+              <div class="vu-mini-bar"></div>
+            </div>
+            <button class="sf-mic" onmousedown="sfStart('fLieu',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fLieu',this);" ontouchend="sfStop();">🎙</button>
           <input type="hidden" id="fLieu">
         </div>
       </div>
@@ -707,7 +726,12 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <label class="sf-label">Pièce</label>
         <div class="sf-input-row">
           <div class="sf-val" id="val_fUnite">—</div>
-          <button class="sf-mic" onmousedown="sfStart('fUnite',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fUnite',this);" ontouchend="sfStop();">🎙</button>
+          <div id="vu_fUnite" class="vu-mini">
+              <div class="vu-mini-bar"></div>
+              <div class="vu-mini-bar"></div>
+              <div class="vu-mini-bar"></div>
+            </div>
+            <button class="sf-mic" onmousedown="sfStart('fUnite',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fUnite',this);" ontouchend="sfStop();">🎙</button>
           <input type="hidden" id="fUnite">
         </div>
       </div>
@@ -716,7 +740,12 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <label class="sf-label">Intervention</label>
         <div class="sf-input-row">
           <div class="sf-val" id="val_fIntervention">—</div>
-          <button class="sf-mic" onmousedown="sfStart('fIntervention',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fIntervention',this);" ontouchend="sfStop();">🎙</button>
+          <div id="vu_fIntervention" class="vu-mini">
+              <div class="vu-mini-bar"></div>
+              <div class="vu-mini-bar"></div>
+              <div class="vu-mini-bar"></div>
+            </div>
+            <button class="sf-mic" onmousedown="sfStart('fIntervention',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fIntervention',this);" ontouchend="sfStop();">🎙</button>
           <input type="hidden" id="fIntervention">
         </div>
       </div>
@@ -725,7 +754,12 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <label class="sf-label">Fourniture</label>
         <div class="sf-input-row">
           <div class="sf-val" id="val_fFourniture">—</div>
-          <button class="sf-mic" onmousedown="sfStart('fFourniture',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fFourniture',this);" ontouchend="sfStop();">🎙</button>
+          <div id="vu_fFourniture" class="vu-mini">
+              <div class="vu-mini-bar"></div>
+              <div class="vu-mini-bar"></div>
+              <div class="vu-mini-bar"></div>
+            </div>
+            <button class="sf-mic" onmousedown="sfStart('fFourniture',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fFourniture',this);" ontouchend="sfStop();">🎙</button>
           <input type="hidden" id="fFourniture">
         </div>
       </div>
@@ -734,7 +768,12 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <label class="sf-label">Cout (euros)</label>
         <div class="sf-input-row">
           <div class="sf-val" id="val_fCout">—</div>
-          <button class="sf-mic" onmousedown="sfStart('fCout',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fCout',this);" ontouchend="sfStop();">🎙</button>
+          <div id="vu_fCout" class="vu-mini">
+              <div class="vu-mini-bar"></div>
+              <div class="vu-mini-bar"></div>
+              <div class="vu-mini-bar"></div>
+            </div>
+            <button class="sf-mic" onmousedown="sfStart('fCout',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fCout',this);" ontouchend="sfStop();">🎙</button>
           <input type="hidden" id="fCout">
         </div>
       </div>
@@ -1053,16 +1092,61 @@ function resetKeywords() {
     .forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('lit'); });
 }
 
-// SIMPLE FIELD MIC - un bouton rouge par champ
+// SIMPLE FIELD MIC
 let sfRecognition = null;
 let sfCurrentField = null;
 let sfCurrentBtn = null;
+let sfStopping = false;
+let sfAudioCtx = null;
+let sfAnalyser = null;
+let sfStream = null;
+let sfVuFrame = null;
+
+function sfGetVuEl(fieldId) {
+  return document.getElementById('vu_'+fieldId);
+}
+
+function sfDrawVu(fieldId) {
+  const vuEl = sfGetVuEl(fieldId);
+  if (!vuEl || !sfAnalyser) return;
+  const data = new Uint8Array(sfAnalyser.frequencyBinCount);
+  function frame() {
+    sfVuFrame = requestAnimationFrame(frame);
+    sfAnalyser.getByteFrequencyData(data);
+    const avg = data.slice(0,8).reduce((s,v)=>s+v,0)/8/255;
+    const bars = vuEl.querySelectorAll('.vu-mini-bar');
+    bars.forEach((b,i) => {
+      const threshold = (i+1)/bars.length;
+      b.style.background = avg > threshold ? (avg>0.7?'#ff2200':avg>0.4?'#ff9900':'#44cc44') : 'var(--border)';
+    });
+  }
+  frame();
+}
+
+async function sfStartVu(fieldId) {
+  try {
+    sfStream = await navigator.mediaDevices.getUserMedia({audio:true});
+    sfAudioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    sfAnalyser = sfAudioCtx.createAnalyser();
+    sfAnalyser.fftSize = 64;
+    sfAudioCtx.createMediaStreamSource(sfStream).connect(sfAnalyser);
+    sfDrawVu(fieldId);
+  } catch(e) {}
+}
+
+function sfStopVu() {
+  if (sfVuFrame) cancelAnimationFrame(sfVuFrame);
+  if (sfStream) sfStream.getTracks().forEach(t=>t.stop());
+  if (sfAudioCtx) sfAudioCtx.close();
+  sfStream=null; sfAudioCtx=null; sfAnalyser=null; sfVuFrame=null;
+  document.querySelectorAll('.vu-mini-bar').forEach(b => b.style.background='var(--border)');
+}
 
 function sfStart(fieldId, btn) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { alert('Micro non disponible'); return; }
-  if (sfRecognition) { try { sfRecognition.abort(); } catch(e){} sfRecognition = null; }
-
+  if (!SR) { alert('Micro non disponible sur ce navigateur'); return; }
+  if (sfRecognition) { try { sfRecognition.abort(); } catch(e){} sfRecognition=null; }
+  sfStopping = false;
   sfCurrentField = fieldId;
   sfCurrentBtn = btn;
   btn.classList.add('listening');
@@ -1074,71 +1158,67 @@ function sfStart(fieldId, btn) {
 
   sfRecognition = new SR();
   sfRecognition.lang = 'fr-FR';
-  sfRecognition.continuous = false; // iOS compatibility
+  sfRecognition.continuous = false;
   sfRecognition.interimResults = false;
   let finalTxt = '';
-  let sfStopping = false;
 
   sfRecognition.onresult = function(e) {
-    for (let i = 0; i < e.results.length; i++) {
+    for (let i=0; i<e.results.length; i++) {
       if (e.results[i].isFinal) finalTxt += e.results[i][0].transcript + ' ';
     }
-    valEl.textContent = finalTxt.trim() || '...';
+    if (finalTxt.trim()) valEl.textContent = finalTxt.trim();
   };
 
   sfRecognition.onend = function() {
-    // Si le bouton est encore enfonce, relancer (iOS coupe apres silence)
     if (btn.classList.contains('listening') && !sfStopping) {
-      try { sfRecognition.start(); return; } catch(e) {}
+      // iOS coupe — relancer si bouton encore enfonce
+      try { sfRecognition.start(); return; } catch(ex) {}
     }
+    sfStopVu();
     btn.classList.remove('listening');
     btn.textContent = '🎙';
     const txt = finalTxt.trim();
     if (txt) {
+      let val = txt;
       if (fieldId === 'fCout') {
         const conv = wordsToNum(normalizeStr(txt));
-        const m = conv.match(/(\d+[.,]?\d*)/) || txt.match(/(\d+)/);
-        const val = m ? m[1].replace(',','.') : txt;
-        document.getElementById(fieldId).value = val;
+        const m = conv.match(/(\d+\.?\d*)/) || txt.match(/(\d+)/);
+        val = m ? m[1] : txt;
         valEl.textContent = val + ' euros';
       } else {
-        document.getElementById(fieldId).value = txt;
         valEl.textContent = txt;
       }
+      document.getElementById(fieldId).value = val;
       valEl.className = 'sf-val filled';
     } else {
-      valEl.textContent = document.getElementById(fieldId).value || '—';
-      valEl.className = document.getElementById(fieldId).value ? 'sf-val filled' : 'sf-val';
+      const existing = document.getElementById(fieldId).value;
+      valEl.textContent = existing || '—';
+      valEl.className = existing ? 'sf-val filled' : 'sf-val';
     }
     sfRecognition = null;
-    sfCurrentField = null;
-    sfCurrentBtn = null;
   };
 
   sfRecognition.onerror = function(e) {
     if (e.error === 'aborted') return;
+    sfStopVu();
     btn.classList.remove('listening');
     btn.textContent = '🎙';
-    valEl.className = 'sf-val';
-    valEl.textContent = document.getElementById(fieldId).value || '—';
     sfRecognition = null;
   };
 
-  // Start immediately - required by Safari iOS user gesture policy
-  try { sfRecognition.start(); } catch(e) { btn.classList.remove('listening'); btn.textContent = '🎙'; }
-}
-
-function toggleSurveiller(btn) {
-  btn.classList.toggle('active-surv');
+  try {
+    sfRecognition.start();
+    sfStartVu(fieldId);
+  } catch(e) {
+    btn.classList.remove('listening');
+    btn.textContent = '🎙';
+  }
 }
 
 function sfStop() {
-  if (sfRecognition) {
-    sfStopping = true;
-    try { sfRecognition.stop(); } catch(e) {}
-  }
+  sfStopping = true;
+  if (sfRecognition) { try { sfRecognition.stop(); } catch(e){} }
 }
-let sfStopping = false;
 
 // OPTION C — sélection champ + bouton micro central
 let selectedFieldId = null;
