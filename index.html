@@ -703,7 +703,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">🏠 Régisseur <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f4a100;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">🏠 Régisseur <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#4444ff;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -713,8 +713,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <div class="tabs">
   <button class="tab active" onclick="showTab('saisie', this)">Saisie</button>
   <button class="tab" onclick="showTab('surveillance', this)">Surveillance</button>
-  <button class="tab" onclick="showTab('visites', this)">Préparer visite</button>
-  <button class="tab" onclick="showTab('rappels', this)">Rappels</button>
+  <button class="tab" onclick="showTab('prochaine', this)">Prochaine visite</button>
   <button class="tab" onclick="showTab('historique', this)">Historique</button>
   <button class="tab" onclick="showTab('efficacite', this)">Efficacité</button>
   <button class="tab" onclick="showTab('proprietes', this)">Propriétés</button>
@@ -864,10 +863,12 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
   </div>
 </div>
 
-<!-- ═══════════ RAPPELS ═══════════ -->
-<div class="panel" id="panel-rappels">
+<!-- ═══════════ PROCHAINE VISITE ═══════════ -->
+<div class="panel" id="panel-prochaine">
+
+  <!-- SECTION RAPPELS -->
   <div class="card">
-    <div class="card-title">➕ Ajouter un rappel</div>
+    <div class="card-title">📋 Ajouter un rappel</div>
     <div class="parsed-grid">
       <div class="field-group">
         <label class="field-label">Propriété</label>
@@ -902,18 +903,17 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <input type="hidden" id="rEmplacement">
       </div>
     </div>
-    <button class="btn btn-primary" onclick="addRappel()">Ajouter</button>
+    <button class="btn btn-primary" onclick="addRappel()">Ajouter le rappel</button>
   </div>
+
   <div class="card">
-    <div class="card-title">📋 Rappels actifs</div>
+    <div class="card-title">📋 Rappels en attente</div>
     <div id="rappelList"><div class="empty-state">Aucun rappel</div></div>
   </div>
-</div>
 
-<!-- ═══════════ PRÉPARER VISITE ═══════════ -->
-<div class="panel" id="panel-visites">
+  <!-- SECTION PLANIFIER -->
   <div class="card">
-    <div class="card-title">🗓 Planifier un déplacement</div>
+    <div class="card-title">🗓 Planifier le déplacement</div>
     <div class="parsed-grid">
       <div class="field-group">
         <label class="field-label">Propriété</label>
@@ -924,12 +924,12 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <input class="field-input" type="date" id="vDate">
       </div>
     </div>
-    <button class="btn btn-primary" onclick="planifierVisite()">Planifier + générer .ics</button>
+    <button class="btn btn-primary" onclick="planifierVisite()">Générer rappel .ics</button>
+    <div class="card" style="margin-top:14px;padding:14px;background:var(--surface2)">
+      <div id="visiteList"><div class="empty-state">Aucune visite planifiée</div></div>
+    </div>
   </div>
-  <div class="card">
-    <div class="card-title">📅 Visites planifiées</div>
-    <div id="visiteList"><div class="empty-state">Aucune visite planifiée</div></div>
-  </div>
+
 </div>
 
 <!-- ═══════════ HISTORIQUE ═══════════ -->
@@ -1062,6 +1062,7 @@ let timerActive = false;
 document.addEventListener('DOMContentLoaded', () => {
   populateAllSelects();
   renderRappels();
+  renderVisites();
   renderSurveillance();
   renderHistorique();
   renderEfficacite();
@@ -1106,8 +1107,8 @@ function showTab(name, btn) {
   if (name==='historique') renderHistorique();
   if (name==='efficacite') renderEfficacite();
   if (name==='proprietes') renderProprietes();
-  if (name==='visites') renderVisites();
-  if (name==='rappels') renderRappels();
+  
+  if (name==='prochaine') { renderRappels(); renderVisites(); }
   if (name==='surveillance') renderSurveillance();
 }
 
