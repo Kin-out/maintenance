@@ -668,7 +668,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#00ccff;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#bb3311;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -1158,15 +1158,19 @@ function sfStart(fieldId, btn) {
 
   sfRecognition = new SR();
   sfRecognition.lang = 'fr-FR';
-  sfRecognition.continuous = false;
-  sfRecognition.interimResults = false;
+  // iOS Safari needs continuous=false, Mac Safari needs continuous=true
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  sfRecognition.continuous = !isIOS;
+  sfRecognition.interimResults = true;
   let finalTxt = '';
 
   sfRecognition.onresult = function(e) {
+    let interim = '';
     for (let i=0; i<e.results.length; i++) {
       if (e.results[i].isFinal) finalTxt += e.results[i][0].transcript + ' ';
+      else interim += e.results[i][0].transcript;
     }
-    if (finalTxt.trim()) valEl.textContent = finalTxt.trim();
+    valEl.textContent = (finalTxt + interim).trim() || '...';
   };
 
   sfRecognition.onend = function() {
@@ -1207,6 +1211,7 @@ function sfStart(fieldId, btn) {
   };
 
   try {
+    sfStopVu(); // Stop any previous vumeter
     sfRecognition.start();
     sfStartVu(fieldId);
   } catch(e) {
