@@ -654,7 +654,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#223388;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#dd5500;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -698,7 +698,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <label class="sf-label">Situation géographique</label>
         <div class="sf-input-row">
           <div class="sf-val" id="val_fLieu">—</div>
-          <button class="sf-mic" onmousedown="sfStart('fLieu',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fLieu',this);return false;" ontouchend="sfStop();return false;">🎙</button>
+          <button class="sf-mic" onmousedown="sfStart('fLieu',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fLieu',this);" ontouchend="sfStop();">🎙</button>
           <input type="hidden" id="fLieu">
         </div>
       </div>
@@ -707,7 +707,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <label class="sf-label">Pièce</label>
         <div class="sf-input-row">
           <div class="sf-val" id="val_fUnite">—</div>
-          <button class="sf-mic" onmousedown="sfStart('fUnite',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fUnite',this);return false;" ontouchend="sfStop();return false;">🎙</button>
+          <button class="sf-mic" onmousedown="sfStart('fUnite',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fUnite',this);" ontouchend="sfStop();">🎙</button>
           <input type="hidden" id="fUnite">
         </div>
       </div>
@@ -716,7 +716,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <label class="sf-label">Intervention</label>
         <div class="sf-input-row">
           <div class="sf-val" id="val_fIntervention">—</div>
-          <button class="sf-mic" onmousedown="sfStart('fIntervention',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fIntervention',this);return false;" ontouchend="sfStop();return false;">🎙</button>
+          <button class="sf-mic" onmousedown="sfStart('fIntervention',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fIntervention',this);" ontouchend="sfStop();">🎙</button>
           <input type="hidden" id="fIntervention">
         </div>
       </div>
@@ -725,7 +725,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <label class="sf-label">Fourniture</label>
         <div class="sf-input-row">
           <div class="sf-val" id="val_fFourniture">—</div>
-          <button class="sf-mic" onmousedown="sfStart('fFourniture',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fFourniture',this);return false;" ontouchend="sfStop();return false;">🎙</button>
+          <button class="sf-mic" onmousedown="sfStart('fFourniture',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fFourniture',this);" ontouchend="sfStop();">🎙</button>
           <input type="hidden" id="fFourniture">
         </div>
       </div>
@@ -734,7 +734,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <label class="sf-label">Cout (euros)</label>
         <div class="sf-input-row">
           <div class="sf-val" id="val_fCout">—</div>
-          <button class="sf-mic" onmousedown="sfStart('fCout',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fCout',this);return false;" ontouchend="sfStop();return false;">🎙</button>
+          <button class="sf-mic" onmousedown="sfStart('fCout',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fCout',this);" ontouchend="sfStop();">🎙</button>
           <input type="hidden" id="fCout">
         </div>
       </div>
@@ -1070,6 +1070,7 @@ function sfStart(fieldId, btn) {
 
   const valEl = document.getElementById('val_'+fieldId);
   valEl.textContent = '...';
+  valEl.className = 'sf-val listening';
 
   sfRecognition = new SR();
   sfRecognition.lang = 'fr-FR';
@@ -1079,7 +1080,7 @@ function sfStart(fieldId, btn) {
 
   sfRecognition.onresult = function(e) {
     let interim = '';
-    for (let i=0; i<e.results.length; i++) {
+    for (let i = 0; i < e.results.length; i++) {
       if (e.results[i].isFinal) finalTxt += e.results[i][0].transcript + ' ';
       else interim += e.results[i][0].transcript;
     }
@@ -1101,9 +1102,10 @@ function sfStart(fieldId, btn) {
         document.getElementById(fieldId).value = txt;
         valEl.textContent = txt;
       }
-      valEl.classList.add('filled');
+      valEl.className = 'sf-val filled';
     } else {
       valEl.textContent = document.getElementById(fieldId).value || '—';
+      valEl.className = document.getElementById(fieldId).value ? 'sf-val filled' : 'sf-val';
     }
     sfRecognition = null;
     sfCurrentField = null;
@@ -1114,10 +1116,13 @@ function sfStart(fieldId, btn) {
     if (e.error === 'aborted') return;
     btn.classList.remove('listening');
     btn.textContent = '🎙';
+    valEl.className = 'sf-val';
+    valEl.textContent = document.getElementById(fieldId).value || '—';
     sfRecognition = null;
   };
 
-  try { sfRecognition.start(); } catch(e) { btn.textContent = '🎙'; }
+  // Start immediately - required by Safari iOS user gesture policy
+  try { sfRecognition.start(); } catch(e) { btn.classList.remove('listening'); btn.textContent = '🎙'; }
 }
 
 function toggleSurveiller(btn) {
@@ -1590,6 +1595,34 @@ function saveEntry() {
   notify('✅ Intervention enregistrée dans le carnet');
 }
 
+function editEntry(id) {
+  const entry = entries.find(e => e.id === id);
+  if (!entry) return;
+  // Pre-fill fields
+  document.getElementById('fProp').value = entry.propId;
+  document.getElementById('fLieu').value = entry.lieu || '';
+  document.getElementById('fUnite').value = entry.unite || '';
+  document.getElementById('fIntervention').value = entry.intervention || '';
+  document.getElementById('fFourniture').value = entry.fourniture || '';
+  document.getElementById('fCout').value = entry.cout || '';
+  // Update displays
+  ['fLieu','fUnite','fIntervention','fFourniture','fCout'].forEach(id => {
+    const v = document.getElementById('val_'+id);
+    const val = document.getElementById(id).value;
+    if (v && val) { v.textContent = val; v.className = 'sf-val filled'; }
+  });
+  setPortee(entry.portee || 'ponctuel');
+  // Remove old entry
+  entries = entries.filter(e => e.id !== id);
+  save('entries', entries);
+  // Go to saisie tab
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-saisie').classList.add('active');
+  document.querySelector('[onclick*="saisie"]').classList.add('active');
+  notify('Entree chargee — modifiez et sauvegardez');
+}
+
 function cancelEntry() {
   // Reset complet — texte, mémoire, champs
   accumulatedText = '';
@@ -1775,6 +1808,7 @@ function renderHistorique() {
       <td>${e.intervention}</td>
       <td>${e.fourniture||'—'}</td>
       <td>${e.cout ? e.cout.toFixed(2)+' €' : '—'}</td>
+      <td><button onclick="editEntry(${e.id})" style="background:none;border:1px solid var(--border);color:var(--text2);padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;font-family:var(--mono)">✏</button></td>
     </tr>`).join('');
 }
 
