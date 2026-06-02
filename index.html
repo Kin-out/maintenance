@@ -707,7 +707,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">🏠 Le Régisseur <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#7c3aed;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">🏠 Le Régisseur <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f97316;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -1422,10 +1422,9 @@ function sfStart(fieldId, btn) {
 
   sfRecognition = new SR();
   sfRecognition.lang = 'fr-FR';
-  // iOS Safari needs continuous=false, Mac Safari needs continuous=true
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  sfRecognition.continuous = !isIOS;
-  sfRecognition.interimResults = true;
+  sfRecognition.continuous = false; // false works on both iOS and Mac
+  sfRecognition.interimResults = !isIOS; // iOS doesn't support interimResults
   let finalTxt = '';
 
   sfRecognition.onresult = function(e) {
@@ -1439,8 +1438,13 @@ function sfStart(fieldId, btn) {
 
   sfRecognition.onend = function() {
     if (btn.classList.contains('listening') && !sfStopping) {
-      // iOS coupe — relancer si bouton encore enfonce
-      try { sfRecognition.start(); return; } catch(ex) {}
+      // iOS coupe apres silence - relancer apres court delai
+      setTimeout(() => {
+        if (btn.classList.contains('listening') && !sfStopping) {
+          try { sfRecognition.start(); } catch(e) {}
+        }
+      }, 150);
+      return;
     }
     sfStopVu();
     btn.classList.remove('listening');
@@ -1490,6 +1494,8 @@ function sfStart(fieldId, btn) {
 function sfStop() {
   sfStopping = true;
   if (sfRecognition) { try { sfRecognition.stop(); } catch(e){} }
+  // Stop vumeter immediately on release
+  setTimeout(() => { if (!sfRecognition) sfStopVu(); }, 500);
 }
 
 // OPTION C — sélection champ + bouton micro central
