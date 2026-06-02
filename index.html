@@ -707,7 +707,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">🏠 Le Régisseur <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ff2222;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">🏠 Le Régisseur <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#38bdf8;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -1516,14 +1516,23 @@ function sfToggle(fieldId, btn) {
     sfStop();
     return;
   }
-  // If recording another field - stop it first then start new
-  if (sfCurrentBtn && sfCurrentBtn !== btn) {
-    sfStop();
-    setTimeout(() => sfStart(fieldId, btn), 200);
-    return;
+  // Always fully reset before starting a new field
+  if (sfRecognition) {
+    sfRecognition.onresult = null;
+    sfRecognition.onend = null;
+    sfRecognition.onerror = null;
+    try { sfRecognition.abort(); } catch(e){}
+    sfRecognition = null;
   }
-  // Start recording
-  sfStart(fieldId, btn);
+  if (sfCurrentBtn && sfCurrentBtn !== btn) {
+    sfCurrentBtn.classList.remove('listening');
+    sfCurrentBtn.textContent = '🎙';
+    sfCurrentBtn = null;
+  }
+  sfStopVu();
+  sfStopping = false;
+  // Small delay on iOS to let previous recognition fully release
+  setTimeout(() => sfStart(fieldId, btn), 300);
 }
 
 // OPTION C — sélection champ + bouton micro central
