@@ -668,7 +668,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#44aa44;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ff8800;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -1529,8 +1529,10 @@ function stopVumeter() {
   if (vuStream) vuStream.getTracks().forEach(t => t.stop());
   if (audioCtx) audioCtx.close();
   vuStream = null; audioCtx = null; analyser = null; vuAnimFrame = null;
-  document.getElementById('vumeter').classList.remove('active');
-  document.getElementById('vuScale').classList.remove('active');
+  const vm = document.getElementById('vumeter');
+  const vs = document.getElementById('vuScale');
+  if (vm) vm.classList.remove('active');
+  if (vs) vs.classList.remove('active');
   for (let i=0; i<12; i++) {
     const b = document.getElementById('vb'+i);
     if (b) { b.style.height = '4px'; b.style.background = '#cc2200'; }
@@ -1911,8 +1913,10 @@ function deleteVisite(id) {
 // HISTORIQUE & EXPORT
 // ═══════════════════════════════════════════
 function renderHistorique() {
-  const propFilter = document.getElementById('filtProp').value;
-  const search = document.getElementById('filtSearch').value.toLowerCase();
+  const filtPropEl = document.getElementById('filtProp');
+  const filtSearchEl = document.getElementById('filtSearch');
+  const propFilter = filtPropEl ? filtPropEl.value : '';
+  const search = filtSearchEl ? filtSearchEl.value.toLowerCase() : '';
   let filtered = entries.filter(e => {
     if (propFilter && e.propId !== propFilter) return false;
     if (search && !JSON.stringify(e).toLowerCase().includes(search)) return false;
