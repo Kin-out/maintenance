@@ -8,16 +8,16 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
-  --bg: #0f0f0d;
-  --surface: #1a1a16;
-  --surface2: #222220;
-  --border: #3a3a34;
-  --accent: #c8a96e;
-  --accent2: #7eb8a4;
-  --danger: #c47a6a;
-  --text: #f0ece0;
-  --text2: #b0aa98;
-  --text3: #808070;
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #1e2530;
+  --border: #30363d;
+  --accent: #58a6ff;
+  --accent2: #3fb950;
+  --danger: #f85149;
+  --text: #e6edf3;
+  --text2: #8b949e;
+  --text3: #484f58;
   --radius: 10px;
   --mono: 'DM Mono', monospace;
   --serif: 'DM Serif Display', serif;
@@ -183,7 +183,7 @@ body {
 .save-main-btn {
   width: 100%;
   padding: 18px;
-  background: var(--accent);
+  background: #238636;
   color: var(--bg);
   border: none;
   border-radius: var(--radius);
@@ -684,7 +684,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#cc9900;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#58a6ff;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -901,7 +901,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <thead>
           <tr>
             <th>Date</th><th>Heure</th><th>Propriété</th><th>Unité</th>
-            <th>Lieu</th><th>Portée</th><th>Intervention</th><th>Fourniture</th><th>Cout €</th><th></th>
+            <th>Lieu</th><th>Portée</th><th>Intervention</th><th>Fourniture</th><th>Cout €</th><th>Observation</th><th>Action</th><th></th>
           </tr>
         </thead>
         <tbody id="histoBody"></tbody>
@@ -915,7 +915,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <div class="panel" id="panel-efficacite">
   <div class="stats-grid" id="statsGrid"></div>
   <div class="card">
-    <div class="card-title">📊 Analyse par propriété</div>
+    <div class="card-title">📊 Efficacité Compiègne</div>
     <div id="efficaciteDetail"></div>
   </div>
 </div>
@@ -1870,8 +1870,11 @@ function saveEntry() {
   };
   entries.push(entry);
   save('entries', entries);
+  window._editingDate = null;
+  window._editingHeure = null;
+  window._editingId = null;
   cancelEntry();
-  notify('✅ Intervention enregistrée dans le carnet');
+  notify('Intervention enregistree dans le carnet');
 }
 
 function deleteEntry(id) {
@@ -1895,18 +1898,22 @@ function editEntry(id) {
   if (!entry) return;
   // Pre-fill fields
   document.getElementById('fProp').value = entry.propId;
-  document.getElementById('fLieu').value = entry.lieu || '';
-  document.getElementById('fUnite').value = entry.unite || '';
-  document.getElementById('fIntervention').value = entry.intervention || '';
-  document.getElementById('fFourniture').value = entry.fourniture || '';
-  document.getElementById('fCout').value = entry.cout || '';
-  // Update displays
-  ['fLieu','fUnite','fIntervention','fFourniture','fCout'].forEach(id => {
+  const fieldsToRestore = {
+    fLieu: entry.lieu, fUnite: entry.unite, fIntervention: entry.intervention,
+    fFourniture: entry.fourniture, fCout: entry.cout,
+    fObservation: entry.observation, fAction: entry.action
+  };
+  Object.entries(fieldsToRestore).forEach(([id, val]) => {
+    if (!val) return;
+    document.getElementById(id).value = val;
     const v = document.getElementById('val_'+id);
-    const val = document.getElementById(id).value;
-    if (v && val) { v.textContent = val; v.className = 'sf-val filled'; }
+    if (v) { v.textContent = val; v.className = 'sf-val filled'; }
   });
   setPortee(entry.portee || 'ponctuel');
+  // Store original date/time for preservation
+  window._editingDate = entry.date;
+  window._editingHeure = entry.heure;
+  window._editingId = entry.id;
   // Remove old entry
   entries = entries.filter(e => e.id !== id);
   save('entries', entries);
@@ -1923,7 +1930,7 @@ function cancelEntry() {
   accumulatedText = '';
   document.getElementById('transcriptBox').textContent = '';
   document.getElementById('transcriptWrap').style.display = 'none';
-  ['fIntervention','fFourniture','fCout','fLieu','fUnite'].forEach(id => {
+  ['fIntervention','fFourniture','fCout','fLieu','fUnite','fObservation','fAction'].forEach(id => {
     document.getElementById(id).value = '';
     const v = document.getElementById('val_'+id);
     if (v) { v.textContent = '—'; v.className = 'sf-val'; }
@@ -2119,7 +2126,9 @@ function renderHistorique() {
       <td><span class="badge badge-${e.portee}">${e.portee}</span></td>
       <td>${e.intervention}</td>
       <td>${e.fourniture||'—'}</td>
-      <td>${e.cout ? e.cout.toFixed(2)+' €' : '—'}</td>
+      <td>${e.cout ? e.cout+' €' : '—'}</td>
+      <td>${e.observation||'—'}</td>
+      <td>${e.action||'—'}</td>
       <td style="white-space:nowrap">
         <button onclick="editEntry(${e.id})" style="background:none;border:1px solid var(--border);color:var(--text2);padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;font-family:var(--mono);margin-right:4px">✏</button>
         <button onclick="deleteEntry(${e.id})" style="background:none;border:1px solid var(--danger);color:var(--danger);padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;font-family:var(--mono)">🗑</button>
@@ -2248,7 +2257,13 @@ function renderProprietes() {
         <div style="font-size:11px;color:var(--text3);margin-bottom:8px">GPS: ${p.lat}, ${p.lng}</div>
         <div style="font-size:12px;color:var(--text2);margin-bottom:6px">Unités :</div>
         <ul class="unit-list" id="unitlist_${p.id}">
-          ${p.units.map((u,i) => `<li><span>${u}</span><button onclick="deleteUnit('${p.id}',${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px">×</button></li>`).join('')}
+          ${p.units.map((u,i) => `<li>
+          <span id="unitspan_${p.id}_${i}">${u}</span>
+          <div style="display:flex;gap:4px">
+            <button onclick="editUnit('${p.id}',${i})" style="background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer;font-size:11px;padding:2px 6px;border-radius:3px">✏</button>
+            <button onclick="deleteUnit('${p.id}',${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px">×</button>
+          </div>
+        </li>`).join('')}
         </ul>
         <div class="add-row">
           <input class="field-input" id="newunit_${p.id}" placeholder="Nouvelle unité…" style="font-size:12px">
@@ -2262,6 +2277,17 @@ function toggleProp(id) {
   const body = document.getElementById('propbody_'+id);
   body.classList.toggle('open');
 }
+function editUnit(propId, idx) {
+  const p = proprietes.find(x => x.id === propId);
+  if (!p) return;
+  const newName = prompt('Nouveau nom:', p.units[idx]);
+  if (newName && newName.trim()) {
+    p.units[idx] = newName.trim();
+    save('props', proprietes);
+    renderProprietes();
+  }
+}
+
 function addUnit(propId) {
   const input = document.getElementById('newunit_'+propId);
   const val = input.value.trim();
