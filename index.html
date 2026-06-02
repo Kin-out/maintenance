@@ -619,7 +619,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#8833ff;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#aaee00;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -707,7 +707,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         </div>
         <div class="field-group">
           <label class="field-label">Pièce</label>
-          <div class="tap-field" id="tap_fUnite" onclick="selectField('fUnite')",'Pièce','piece')">
+          <div class="tap-field" id="tap_fUnite" onclick="selectField('fUnite')">
             <span class="tap-val" id="val_fUnite">Toucher pour sélectionner</span>
             <span class="tap-icon">🎙</span>
             <input type="hidden" id="fUnite">
@@ -715,7 +715,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         </div>
         <div class="field-group" id="fLieuGroup">
           <label class="field-label">Situation géographique</label>
-          <div class="tap-field" id="tap_fLieu" onclick="selectField('fLieu')",'Situation géographique','lieu')">
+          <div class="tap-field" id="tap_fLieu" onclick="selectField('fLieu')">
             <span class="tap-val" id="val_fLieu">Toucher pour sélectionner</span>
             <span class="tap-icon">🎙</span>
             <input type="hidden" id="fLieu">
@@ -723,7 +723,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         </div>
         <div class="field-group">
           <label class="field-label">Intervention</label>
-          <div class="tap-field" id="tap_fIntervention" onclick="selectField('fIntervention')",'Intervention','intervention')">
+          <div class="tap-field" id="tap_fIntervention" onclick="selectField('fIntervention')">
             <span class="tap-val" id="val_fIntervention">Toucher pour sélectionner</span>
             <span class="tap-icon">🎙</span>
             <input type="hidden" id="fIntervention">
@@ -731,7 +731,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         </div>
         <div class="field-group">
           <label class="field-label">Fourniture</label>
-          <div class="tap-field" id="tap_fFourniture" onclick="selectField('fFourniture')",'Fourniture','fourniture')">
+          <div class="tap-field" id="tap_fFourniture" onclick="selectField('fFourniture')">
             <span class="tap-val" id="val_fFourniture">Toucher pour sélectionner</span>
             <span class="tap-icon">🎙</span>
             <input type="hidden" id="fFourniture">
@@ -739,7 +739,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         </div>
         <div class="field-group">
           <label class="field-label">Coût (€)</label>
-          <div class="tap-field" id="tap_fCout" onclick="selectField('fCout')",'Coût','cout')">
+          <div class="tap-field" id="tap_fCout" onclick="selectField('fCout')">
             <span class="tap-val" id="val_fCout">Toucher pour sélectionner</span>
             <span class="tap-icon">🎙</span>
             <input type="hidden" id="fCout">
@@ -914,7 +914,9 @@ document.addEventListener('touchstart', function(e) {
 let lastTouchEnd = 0;
 document.addEventListener('touchend', function(e) {
   const now = Date.now();
-  if (now - lastTouchEnd < 300) e.preventDefault();
+  if (now - lastTouchEnd < 300 && e.target.tagName !== 'BUTTON' && !e.target.closest('.tap-field') && !e.target.closest('button')) {
+    e.preventDefault();
+  }
   lastTouchEnd = now;
 }, { passive: false });
 
