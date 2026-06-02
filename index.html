@@ -707,7 +707,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">🏠 Le Régisseur <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f97316;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">🏠 Le Régisseur <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ec4899;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -756,7 +756,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
               <div class="vu-mini-bar"></div>
               <div class="vu-mini-bar"></div>
             </div>
-            <button class="sf-mic" onmousedown="sfStart('fLieu',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fLieu',this);" ontouchend="sfStop();">🎙</button>
+            <button class="sf-mic" onclick="sfToggle('fLieu',this)">🎙</button>
           <input type="hidden" id="fLieu">
         </div>
       </div>
@@ -770,7 +770,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
               <div class="vu-mini-bar"></div>
               <div class="vu-mini-bar"></div>
             </div>
-            <button class="sf-mic" onmousedown="sfStart('fUnite',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fUnite',this);" ontouchend="sfStop();">🎙</button>
+            <button class="sf-mic" onclick="sfToggle('fUnite',this)">🎙</button>
           <input type="hidden" id="fUnite">
         </div>
       </div>
@@ -784,7 +784,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
               <div class="vu-mini-bar"></div>
               <div class="vu-mini-bar"></div>
             </div>
-            <button class="sf-mic" onmousedown="sfStart('fIntervention',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fIntervention',this);" ontouchend="sfStop();">🎙</button>
+            <button class="sf-mic" onclick="sfToggle('fIntervention',this)">🎙</button>
           <input type="hidden" id="fIntervention">
         </div>
       </div>
@@ -798,7 +798,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
               <div class="vu-mini-bar"></div>
               <div class="vu-mini-bar"></div>
             </div>
-            <button class="sf-mic" onmousedown="sfStart('fFourniture',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fFourniture',this);" ontouchend="sfStop();">🎙</button>
+            <button class="sf-mic" onclick="sfToggle('fFourniture',this)">🎙</button>
           <input type="hidden" id="fFourniture">
         </div>
       </div>
@@ -812,7 +812,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
               <div class="vu-mini-bar"></div>
               <div class="vu-mini-bar"></div>
             </div>
-            <button class="sf-mic" onmousedown="sfStart('fCout',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fCout',this);" ontouchend="sfStop();">🎙</button>
+            <button class="sf-mic" onclick="sfToggle('fCout',this)">🎙</button>
           <input type="hidden" id="fCout">
         </div>
       </div>
@@ -823,7 +823,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <div class="sf-input-row">
           <div class="sf-val" id="val_fObservation">—</div>
           <div id="vu_fObservation" class="vu-mini"><div class="vu-mini-bar"></div><div class="vu-mini-bar"></div><div class="vu-mini-bar"></div></div>
-          <button class="sf-mic" onmousedown="sfStart('fObservation',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fObservation',this);" ontouchend="sfStop();">🎙</button>
+          <button class="sf-mic" onclick="sfToggle('fObservation',this)">🎙</button>
           <input type="hidden" id="fObservation">
         </div>
       </div>
@@ -833,7 +833,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <div class="sf-input-row">
           <div class="sf-val" id="val_fAction">—</div>
           <div id="vu_fAction" class="vu-mini"><div class="vu-mini-bar"></div><div class="vu-mini-bar"></div><div class="vu-mini-bar"></div></div>
-          <button class="sf-mic" onmousedown="sfStart('fAction',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fAction',this);" ontouchend="sfStop();">🎙</button>
+          <button class="sf-mic" onclick="sfToggle('fAction',this)">🎙</button>
           <input type="hidden" id="fAction">
         </div>
       </div>
@@ -910,7 +910,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <div class="sf-input-row">
           <div class="sf-val" id="val_rDesc">—</div>
           <div id="vu_rDesc" class="vu-mini"><div class="vu-mini-bar"></div><div class="vu-mini-bar"></div><div class="vu-mini-bar"></div></div>
-          <button class="sf-mic" onmousedown="sfStart('rDesc',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('rDesc',this);" ontouchend="sfStop();">🎙</button>
+          <button class="sf-mic" onclick="sfToggle('rDesc',this)">🎙</button>
           <input type="hidden" id="rDesc">
         </div>
       </div>
@@ -1494,8 +1494,23 @@ function sfStart(fieldId, btn) {
 function sfStop() {
   sfStopping = true;
   if (sfRecognition) { try { sfRecognition.stop(); } catch(e){} }
-  // Stop vumeter immediately on release
   setTimeout(() => { if (!sfRecognition) sfStopVu(); }, 500);
+}
+
+function sfToggle(fieldId, btn) {
+  // If already recording this field - stop
+  if (btn.classList.contains('listening')) {
+    sfStop();
+    return;
+  }
+  // If recording another field - stop it first then start new
+  if (sfCurrentBtn && sfCurrentBtn !== btn) {
+    sfStop();
+    setTimeout(() => sfStart(fieldId, btn), 200);
+    return;
+  }
+  // Start recording
+  sfStart(fieldId, btn);
 }
 
 // OPTION C — sélection champ + bouton micro central
