@@ -668,7 +668,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ff8800;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#003388;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -797,6 +797,128 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
   <div id="transcriptWrap" style="display:none">
     <input type="hidden" id="transcriptBox">
   </div></div>
+
+
+<!-- ═══════════ RAPPELS ═══════════ -->
+<div class="panel" id="panel-rappels">
+  <div class="card">
+    <div class="card-title">➕ Ajouter un rappel</div>
+    <div class="parsed-grid">
+      <div class="field-group">
+        <label class="field-label">Propriété</label>
+        <select class="field-input" id="rProp"></select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Type</label>
+        <select class="field-input" id="rType">
+          <option value="outil">🔧 Outil à ramener</option>
+          <option value="travail">🏗 Travail à prévoir</option>
+          <option value="fourniture">📦 Fourniture à acheter</option>
+        </select>
+      </div>
+      <div class="field-group" style="grid-column:1/-1">
+        <label class="field-label">Description</label>
+        <input class="field-input" id="rDesc" placeholder="ex: Cle a molette + scie sauteuse">
+      </div>
+      <div class="field-group" style="grid-column:1/-1">
+        <label class="field-label">Emplacement des équipements</label>
+        <input class="field-input" id="rEmplacement" placeholder="ex: Atelier Jouet, caisse rouge">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="addRappel()">Ajouter</button>
+  </div>
+  <div class="card">
+    <div class="card-title">📋 Rappels actifs</div>
+    <div id="rappelList"><div class="empty-state">Aucun rappel</div></div>
+  </div>
+</div>
+
+<!-- ═══════════ PRÉPARER VISITE ═══════════ -->
+<div class="panel" id="panel-visites">
+  <div class="card">
+    <div class="card-title">🗓 Planifier un déplacement</div>
+    <div class="parsed-grid">
+      <div class="field-group">
+        <label class="field-label">Propriété</label>
+        <select class="field-input" id="vProp"></select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Date prévue</label>
+        <input class="field-input" type="date" id="vDate">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="planifierVisite()">Planifier + générer .ics</button>
+  </div>
+  <div class="card">
+    <div class="card-title">📅 Visites planifiées</div>
+    <div id="visiteList"><div class="empty-state">Aucune visite planifiée</div></div>
+  </div>
+</div>
+
+<!-- ═══════════ HISTORIQUE ═══════════ -->
+<div class="panel" id="panel-historique">
+  <div class="card" style="padding:14px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <select class="field-input" id="filtProp" style="width:auto" onchange="renderHistorique()">
+        <option value="">Toutes propriétés</option>
+      </select>
+      <input class="field-input" type="text" id="filtSearch" placeholder="Rechercher…" style="width:auto;flex:1" oninput="renderHistorique()">
+      <button class="btn btn-secondary" onclick="exportExcel()">⬇ Export Excel</button>
+    </div>
+  </div>
+  <div class="card" style="padding:0 20px 20px">
+    <div class="table-wrap">
+      <table id="histoTable">
+        <thead>
+          <tr>
+            <th>Date</th><th>Heure</th><th>Propriété</th><th>Unité</th>
+            <th>Lieu</th><th>Portée</th><th>Intervention</th><th>Fourniture</th><th>Cout €</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="histoBody"></tbody>
+      </table>
+    </div>
+    <div id="histoEmpty" class="empty-state" style="display:none">Aucune entrée</div>
+  </div>
+</div>
+
+<!-- ═══════════ EFFICACITÉ ═══════════ -->
+<div class="panel" id="panel-efficacite">
+  <div class="stats-grid" id="statsGrid"></div>
+  <div class="card">
+    <div class="card-title">📊 Analyse par propriété</div>
+    <div id="efficaciteDetail"></div>
+  </div>
+</div>
+
+<!-- ═══════════ PROPRIÉTÉS ═══════════ -->
+<div class="panel" id="panel-proprietes">
+  <div class="card">
+    <div class="card-title">🏠 Mes propriétés</div>
+    <div id="propList"></div>
+    <hr class="divider">
+    <div class="section-title">Ajouter une propriété</div>
+    <div class="parsed-grid">
+      <div class="field-group">
+        <label class="field-label">Nom</label>
+        <input class="field-input" id="newPropName" placeholder="ex: Arcachon">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Adresse</label>
+        <input class="field-input" id="newPropAddr" placeholder="1 Place du Dr Peyneau, Arcachon">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Latitude</label>
+        <input class="field-input" id="newPropLat" type="number" step="0.000001">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Longitude</label>
+        <input class="field-input" id="newPropLng" type="number" step="0.000001">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="addPropriete()">Ajouter</button>
+  </div>
+</div>
 
 </div><!-- /main -->
 
@@ -2123,5 +2245,14 @@ function notify(msg) {
   setTimeout(() => el.classList.remove('show'), 3000);
 }
 </script>
+
+<!-- Hidden elements for JS compatibility -->
+<div style="display:none">
+  <div id="activeFieldLabel"></div>
+  <button id="recordBtn"></button>
+  <div id="recordLabel"></div>
+  <div id="vumeter"></div>
+  <div id="vuScale"></div>
+</div>
 </body>
 </html>
