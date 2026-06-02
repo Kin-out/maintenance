@@ -347,6 +347,21 @@ select.field-input { cursor: pointer; }
   box-shadow: 0 0 16px rgba(255,17,0,0.6);
 }
 
+/* SURVEILLANCE */
+.surv-item {
+  background: var(--surface2);
+  border: 2px solid rgba(234,179,8,0.4);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.surv-header { display: flex; justify-content: space-between; margin-bottom: 12px; }
+.surv-prop { font-weight: 700; color: var(--text); font-size: 14px; }
+.surv-desc { font-size: 13px; color: var(--text2); margin-top: 2px; }
+.surv-obs { font-size: 12px; color: var(--accent); margin-top: 4px; font-style: italic; }
+.surv-date { font-size: 11px; color: var(--text3); }
+.surv-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
 /* LOCATION BUTTONS */
 .loc-btn {
   padding: 8px 14px;
@@ -688,7 +703,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">🏠 Régisseur <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e63946;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">🏠 Régisseur <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f4a100;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -697,8 +712,9 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 
 <div class="tabs">
   <button class="tab active" onclick="showTab('saisie', this)">Saisie</button>
-  <button class="tab" onclick="showTab('rappels', this)">Rappels</button>
+  <button class="tab" onclick="showTab('surveillance', this)">Surveillance</button>
   <button class="tab" onclick="showTab('visites', this)">Préparer visite</button>
+  <button class="tab" onclick="showTab('rappels', this)">Rappels</button>
   <button class="tab" onclick="showTab('historique', this)">Historique</button>
   <button class="tab" onclick="showTab('efficacite', this)">Efficacité</button>
   <button class="tab" onclick="showTab('proprietes', this)">Propriétés</button>
@@ -839,6 +855,14 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
     <input type="hidden" id="transcriptBox">
   </div></div>
 
+
+<!-- ═══════════ SURVEILLANCE ═══════════ -->
+<div class="panel" id="panel-surveillance">
+  <div class="card">
+    <div class="card-title">👁 Points de surveillance actifs</div>
+    <div id="surveillanceList"><div class="empty-state">Aucun point de surveillance</div></div>
+  </div>
+</div>
 
 <!-- ═══════════ RAPPELS ═══════════ -->
 <div class="panel" id="panel-rappels">
@@ -1038,6 +1062,7 @@ let timerActive = false;
 document.addEventListener('DOMContentLoaded', () => {
   populateAllSelects();
   renderRappels();
+  renderSurveillance();
   renderHistorique();
   renderEfficacite();
   renderProprietes();
@@ -1083,6 +1108,7 @@ function showTab(name, btn) {
   if (name==='proprietes') renderProprietes();
   if (name==='visites') renderVisites();
   if (name==='rappels') renderRappels();
+  if (name==='surveillance') renderSurveillance();
 }
 
 // ═══════════════════════════════════════════
@@ -1974,6 +2000,10 @@ function cancelEntry() {
 // ═══════════════════════════════════════════
 // RAPPELS
 // ═══════════════════════════════════════════
+function toggleSurveiller(btn) {
+  btn.classList.toggle('active-surv');
+}
+
 function setEmplacement(loc) {
   document.getElementById('rEmplacement').value = loc;
   document.getElementById('empSelected').textContent = '📍 ' + loc + ' sélectionné';
@@ -2017,6 +2047,90 @@ function deleteRappel(id) {
   rappels = rappels.filter(x => x.id !== id);
   save('rappels', rappels);
   renderRappels();
+}
+
+function renderSurveillance() {
+  const el = document.getElementById('surveillanceList');
+  if (!el) return;
+  const items = load('surveillanceItems', []);
+  // Also add entries marked as surveiller that aren't in items yet
+  entries.filter(e => e.surveiller).forEach(e => {
+    if (!items.find(s => s.entryId === e.id)) {
+      items.push({
+        id: Date.now() + Math.random(),
+        entryId: e.id,
+        propName: e.propName,
+        lieu: e.lieu,
+        intervention: e.intervention,
+        observation: e.observation || '',
+        date: e.date,
+        frequence: 'mensuelle',
+        prochaine: null,
+        clos: false
+      });
+      save('surveillanceItems', items);
+    }
+  });
+  const actifs = items.filter(s => !s.clos);
+  if (!actifs.length) { el.innerHTML = '<div class="empty-state">Aucun point de surveillance</div>'; return; }
+  const freqLabels = { hebdomadaire:'Hebdo', mensuelle:'Mensuel', trimestrielle:'Trimestriel', annuelle:'Annuel' };
+  el.innerHTML = actifs.map(s => `
+    <div class="surv-item">
+      <div class="surv-header">
+        <div>
+          <div class="surv-prop">${s.propName}</div>
+          <div class="surv-desc">${s.lieu ? s.lieu+' — ' : ''}${s.intervention}</div>
+          ${s.observation ? `<div class="surv-obs">${s.observation}</div>` : ''}
+        </div>
+        <div style="text-align:right">
+          <div class="surv-date">Depuis le ${s.date}</div>
+        </div>
+      </div>
+      <div class="surv-actions">
+        <select class="field-input" style="font-size:12px;padding:6px 10px;width:auto" onchange="setFrequence(${s.id}, this.value)">
+          <option value="hebdomadaire" ${s.frequence==='hebdomadaire'?'selected':''}>Hebdomadaire</option>
+          <option value="mensuelle" ${s.frequence==='mensuelle'?'selected':''}>Mensuelle</option>
+          <option value="trimestrielle" ${s.frequence==='trimestrielle'?'selected':''}>Trimestrielle</option>
+          <option value="annuelle" ${s.frequence==='annuelle'?'selected':''}>Annuelle</option>
+        </select>
+        <button class="btn btn-secondary" onclick="rasItem(${s.id})" style="font-size:12px;padding:6px 12px">✅ RAS</button>
+        <button class="btn btn-danger" onclick="closItem(${s.id})" style="font-size:12px;padding:6px 12px">Clore</button>
+      </div>
+      ${s.prochaine ? `<div style="font-size:11px;color:var(--accent2);margin-top:6px">Prochaine vérification : ${s.prochaine}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function setFrequence(id, freq) {
+  const items = load('surveillanceItems', []);
+  const s = items.find(x => x.id === id);
+  if (!s) return;
+  s.frequence = freq;
+  // Calcule prochaine date
+  const now = new Date();
+  const days = {hebdomadaire:7, mensuelle:30, trimestrielle:90, annuelle:365};
+  const next = new Date(now.getTime() + days[freq]*24*60*60*1000);
+  s.prochaine = next.toLocaleDateString('fr-FR');
+  save('surveillanceItems', items);
+  renderSurveillance();
+}
+
+function rasItem(id) {
+  const items = load('surveillanceItems', []);
+  const s = items.find(x => x.id === id);
+  if (!s) return;
+  notify('RAS enregistre pour ' + s.intervention);
+  setFrequence(id, s.frequence); // Reset prochaine date
+}
+
+function closItem(id) {
+  if (!confirm('Clore cette surveillance ?')) return;
+  const items = load('surveillanceItems', []);
+  const s = items.find(x => x.id === id);
+  if (s) s.clos = true;
+  save('surveillanceItems', items);
+  renderSurveillance();
+  notify('Surveillance close');
 }
 
 function renderRappels() {
