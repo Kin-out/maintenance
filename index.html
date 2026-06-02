@@ -544,7 +544,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#cc4422;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#aa66ff;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -1177,7 +1177,7 @@ function checkPortee(txt) {
 }
 
 function wordsToNum(str) {
-  const map = {'zéro':0,'zero':0,'un':1,'une':1,'deux':2,'trois':3,'quatre':4,'cinq':5,'six':6,
+  const map = {'zero':0,'un':1,'une':1,'deux':2,'trois':3,'quatre':4,'cinq':5,'six':6,
     'sept':7,'huit':8,'neuf':9,'dix':10,'onze':11,'douze':12,'treize':13,
     'quatorze':14,'quinze':15,'seize':16,'vingt':20,'trente':30,'quarante':40,
     'cinquante':50,'soixante':60,'cent':100,'mille':1000};
@@ -1196,61 +1196,77 @@ function wordsToNum(str) {
   return s.trim();
 }
 
-// Découpe le texte en segments selon les mots clés ordonnés
-// Ordre attendu : LIEU, PIÈCE, INTERVENTION, FOURNITURE, COÛT
+// Mots clés déclencheurs — simples, sans accents
+const FIELD_KEYWORDS = [
+  { field: 'fLieu',         keys: ['lieu'] },
+  { field: 'fUnite',        keys: ['piece'] },
+  { field: 'fIntervention', keys: ['intervention'] },
+  { field: 'fFourniture',   keys: ['fourniture'] },
+  { field: 'fCout',         keys: ['cout', 'euro', 'euros'] },
+];
+
+function normalizeStr(s) {
+  return s.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+
 function parseTranscript(txt) {
   if (!txt) return;
-  const lower = txt.toLowerCase();
-  const converted = wordsToNum(lower);
+  const norm = normalizeStr(txt);
+  const converted = wordsToNum(norm);
 
-  // Mots déclencheurs par champ
-  const triggers = {
-    lieu:         ['lieu','adresse','propriete','batiment','immeuble','compiegne','jouet','arcachon','paris'],
-    piece:        ['piece','chambre','salle','cuisine','couloir','bureau','wc','toilette','garage','cave','grenier','salon','studio','appt','appartement'],
-    intervention: ['intervention','j ai','change','repare','installe','remplace','pose','fixe','nettoye','verifie','controle','inspecte'],
-    fourniture:   ['fourniture','achete','materiau','joint','vis','tuyau','robinet','vmc','mitigeur','cable','ampoule','filtre'],
-    cout:         ['euro','euros','cout','coute','prix','paye']
-  };
+  // Découpe le texte en segments autour des mots clés
+  // Cherche la position de chaque mot clé dans le texte normalisé
+  let segments = [];
+  let remaining = norm;
+  let lastField = null;
+  let lastPos = 0;
 
-  // Cherche chaque champ
-  const fields = { lieu:'fLieu', piece:'fUnite', intervention:'fIntervention', fourniture:'fFourniture', cout:'fCout' };
-
-  // Découpe en segments séparés par virgule ou point
-  const segments = txt.split(/[,.]/).map(s => s.trim()).filter(Boolean);
-
-  // Assignation par correspondance de trigger
-  const assigned = {};
-  segments.forEach(seg => {
-    const segLow = seg.toLowerCase();
-    let bestField = null;
-    Object.entries(triggers).forEach(([field, words]) => {
-      if (!assigned[field] && words.some(w => segLow.includes(w))) {
-        bestField = field;
+  // Trouve tous les mots clés et leur position
+  let found = [];
+  FIELD_KEYWORDS.forEach(({field, keys}) => {
+    keys.forEach(key => {
+      let idx = 0;
+      while (true) {
+        const pos = remaining.indexOf(key, idx);
+        if (pos === -1) break;
+        // Vérifie que c'est un mot entier
+        const before = pos === 0 || /\s/.test(remaining[pos-1]);
+        const after = pos+key.length >= remaining.length || /\s/.test(remaining[pos+key.length]);
+        if (before && after) {
+          found.push({ pos, end: pos+key.length, field, key });
+        }
+        idx = pos + 1;
       }
     });
-    if (bestField) assigned[bestField] = seg;
   });
 
-  // Fallback par position si pas de trigger trouvé
-  if (segments.length >= 1 && !assigned.lieu)         assigned.lieu = segments[0];
-  if (segments.length >= 2 && !assigned.piece)        assigned.piece = segments[1];
-  if (segments.length >= 3 && !assigned.intervention) assigned.intervention = segments[2];
-  if (segments.length >= 4 && !assigned.fourniture)   assigned.fourniture = segments[3];
+  // Trie par position
+  found.sort((a,b) => a.pos - b.pos);
+  // Déduplique — garde le premier par field
+  const seenFields = new Set();
+  found = found.filter(f => {
+    if (seenFields.has(f.field)) return false;
+    seenFields.add(f.field);
+    return true;
+  });
 
-  // Coût — toujours depuis le texte converti
-  if (!assigned.cout) {
-    const costMatch = converted.match(/(\d+[.,]?\d*)\s*euro/) || lower.match(/(\d+[.,]?\d*)\s*euro/);
-    if (costMatch) document.getElementById('fCout').value = costMatch[1].replace(',','.');
-  } else {
-    const costMatch = wordsToNum(assigned.cout.toLowerCase()).match(/(\d+[.,]?\d*)\s*euro/) || assigned.cout.match(/(\d+[.,]?\d*)\s*euro/i);
-    if (costMatch) document.getElementById('fCout').value = costMatch[1].replace(',','.');
-  }
+  // Extrait le contenu entre chaque mot clé
+  found.forEach((item, i) => {
+    const start = item.end;
+    const end = i+1 < found.length ? found[i+1].pos : norm.length;
+    const val = norm.slice(start, end).replace(/^[\s:,]+|[\s,]+$/g, '').trim();
+    if (val && item.field !== 'fCout') {
+      document.getElementById(item.field).value = val;
+    }
+  });
 
-  // Remplir les champs
-  if (assigned.lieu)         document.getElementById('fLieu').value = assigned.lieu;
-  if (assigned.piece)        document.getElementById('fUnite').value = assigned.piece;
-  if (assigned.intervention) document.getElementById('fIntervention').value = assigned.intervention;
-  if (assigned.fourniture)   document.getElementById('fFourniture').value = assigned.fourniture;
+  // Coût — depuis texte converti, cherche nombre + euro
+  const costMatch = converted.match(/(\d+[.,]?\d*)\s*euro/)
+    || norm.match(/(\d+[.,]?\d*)\s*euro/);
+  if (costMatch) document.getElementById('fCout').value = costMatch[1].replace(',','.');
 }
 
 // ═══════════════════════════════════════════
