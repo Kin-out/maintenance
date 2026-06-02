@@ -301,6 +301,29 @@ select.field-input { cursor: pointer; }
 .btn-danger:hover { background: rgba(196,122,106,0.1); }
 .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
 
+/* SIMPLE FIELDS */
+.simple-fields { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.sf-row { display: flex; flex-direction: column; gap: 4px; }
+.sf-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+.sf-input-row { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+.sf-val { flex: 1; font-family: var(--mono); font-size: 13px; color: var(--text2); min-height: 20px; }
+.sf-val.filled { color: var(--text); }
+.sf-mic {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: #cc2200;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.sf-mic:active, .sf-mic.listening { background: #ff0000; transform: scale(1.1); box-shadow: 0 0 12px rgba(255,0,0,0.5); }
+
 /* TAP FIELDS */
 .tap-field {
   display: flex;
@@ -619,7 +642,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ff00aa;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#00ddcc;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -684,13 +707,10 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
           <div class="vu-bar" id="vb10"></div><div class="vu-bar" id="vb11"></div>
         </div>
       </div>
-      <!-- BOUTON MIC CENTRAL + SAVE -->
-      <div id="activeFieldLabel" style="text-align:center;font-size:12px;color:var(--text3);margin-bottom:10px;letter-spacing:0.08em;text-transform:uppercase;min-height:18px"></div>
-      <button class="record-btn" id="recordBtn" onmousedown="startFieldMic()" onmouseup="stopFieldMic()" onmouseleave="stopFieldMic()" ontouchstart="startFieldMic(event)" ontouchend="stopFieldMic()">🎙</button>
-      <div class="record-label" id="recordLabel">Sélectionner un champ puis maintenir</div>
-      <div style="display:flex;gap:10px;margin-top:16px">
+      <!-- BOUTONS ACTION -->
+      <div style="display:flex;gap:10px;margin-top:8px">
         <button class="save-main-btn" onclick="saveEntry()">💾 Sauvegarder</button>
-        <button class="btn btn-secondary" style="padding:14px 20px" onclick="cancelEntry()">✕</button>
+        <button class="btn btn-secondary" style="padding:14px 20px;font-size:18px" onclick="cancelEntry()">✕</button>
       </div>
     </div>
 
@@ -700,48 +720,48 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
         <button class="portee-btn" id="portGlob" onclick="setPortee('global')">🏠 Global (toute l'habitation)</button>
       </div>
 
-      <div class="parsed-grid">
-        <div class="field-group">
-          <label class="field-label">Propriété</label>
+      <div class="simple-fields">
+        <div class="sf-row">
+          <label class="sf-label">Propriété</label>
           <select class="field-input" id="fProp"></select>
         </div>
-        <div class="field-group">
-          <label class="field-label">Pièce</label>
-          <div class="tap-field" id="tap_fUnite" onclick="selectField('fUnite')">
-            <span class="tap-val" id="val_fUnite">Toucher pour sélectionner</span>
-            <span class="tap-icon">🎙</span>
-            <input type="hidden" id="fUnite">
-          </div>
-        </div>
-        <div class="field-group" id="fLieuGroup">
-          <label class="field-label">Situation géographique</label>
-          <div class="tap-field" id="tap_fLieu" onclick="selectField('fLieu')">
-            <span class="tap-val" id="val_fLieu">Toucher pour sélectionner</span>
-            <span class="tap-icon">🎙</span>
+        <div class="sf-row">
+          <label class="sf-label">Situation géographique</label>
+          <div class="sf-input-row">
+            <div class="sf-val" id="val_fLieu">—</div>
+            <button class="sf-mic" onmousedown="sfStart('fLieu',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fLieu',this);return false;" ontouchend="sfStop();return false;">🎙</button>
             <input type="hidden" id="fLieu">
           </div>
         </div>
-        <div class="field-group">
-          <label class="field-label">Intervention</label>
-          <div class="tap-field" id="tap_fIntervention" onclick="selectField('fIntervention')">
-            <span class="tap-val" id="val_fIntervention">Toucher pour sélectionner</span>
-            <span class="tap-icon">🎙</span>
+        <div class="sf-row">
+          <label class="sf-label">Pièce</label>
+          <div class="sf-input-row">
+            <div class="sf-val" id="val_fUnite">—</div>
+            <button class="sf-mic" onmousedown="sfStart('fUnite',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fUnite',this);return false;" ontouchend="sfStop();return false;">🎙</button>
+            <input type="hidden" id="fUnite">
+          </div>
+        </div>
+        <div class="sf-row">
+          <label class="sf-label">Intervention</label>
+          <div class="sf-input-row">
+            <div class="sf-val" id="val_fIntervention">—</div>
+            <button class="sf-mic" onmousedown="sfStart('fIntervention',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fIntervention',this);return false;" ontouchend="sfStop();return false;">🎙</button>
             <input type="hidden" id="fIntervention">
           </div>
         </div>
-        <div class="field-group">
-          <label class="field-label">Fourniture</label>
-          <div class="tap-field" id="tap_fFourniture" onclick="selectField('fFourniture')">
-            <span class="tap-val" id="val_fFourniture">Toucher pour sélectionner</span>
-            <span class="tap-icon">🎙</span>
+        <div class="sf-row">
+          <label class="sf-label">Fourniture</label>
+          <div class="sf-input-row">
+            <div class="sf-val" id="val_fFourniture">—</div>
+            <button class="sf-mic" onmousedown="sfStart('fFourniture',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fFourniture',this);return false;" ontouchend="sfStop();return false;">🎙</button>
             <input type="hidden" id="fFourniture">
           </div>
         </div>
-        <div class="field-group">
-          <label class="field-label">Coût (€)</label>
-          <div class="tap-field" id="tap_fCout" onclick="selectField('fCout')">
-            <span class="tap-val" id="val_fCout">Toucher pour sélectionner</span>
-            <span class="tap-icon">🎙</span>
+        <div class="sf-row">
+          <label class="sf-label">Cout (euros)</label>
+          <div class="sf-input-row">
+            <div class="sf-val" id="val_fCout">—</div>
+            <button class="sf-mic" onmousedown="sfStart('fCout',this)" onmouseup="sfStop()" onmouseleave="sfStop()" ontouchstart="sfStart('fCout',this);return false;" ontouchend="sfStop();return false;">🎙</button>
             <input type="hidden" id="fCout">
           </div>
         </div>
@@ -1179,6 +1199,77 @@ function highlightKeywords(txt) {
 function resetKeywords() {
   ['kw_intervention','kw_fourniture','kw_cout','kw_lieu','kw_unite','kw_surveiller']
     .forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('lit'); });
+}
+
+// SIMPLE FIELD MIC - un bouton rouge par champ
+let sfRecognition = null;
+let sfCurrentField = null;
+let sfCurrentBtn = null;
+
+function sfStart(fieldId, btn) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { alert('Micro non disponible'); return; }
+  if (sfRecognition) { try { sfRecognition.abort(); } catch(e){} sfRecognition = null; }
+
+  sfCurrentField = fieldId;
+  sfCurrentBtn = btn;
+  btn.classList.add('listening');
+  btn.textContent = '⏹';
+
+  const valEl = document.getElementById('val_'+fieldId);
+  valEl.textContent = '...';
+
+  sfRecognition = new SR();
+  sfRecognition.lang = 'fr-FR';
+  sfRecognition.continuous = true;
+  sfRecognition.interimResults = true;
+  let finalTxt = '';
+
+  sfRecognition.onresult = function(e) {
+    let interim = '';
+    for (let i=0; i<e.results.length; i++) {
+      if (e.results[i].isFinal) finalTxt += e.results[i][0].transcript + ' ';
+      else interim += e.results[i][0].transcript;
+    }
+    valEl.textContent = (finalTxt + interim).trim() || '...';
+  };
+
+  sfRecognition.onend = function() {
+    btn.classList.remove('listening');
+    btn.textContent = '🎙';
+    const txt = finalTxt.trim();
+    if (txt) {
+      if (fieldId === 'fCout') {
+        const conv = wordsToNum(normalizeStr(txt));
+        const m = conv.match(/(\d+[.,]?\d*)/) || txt.match(/(\d+)/);
+        const val = m ? m[1].replace(',','.') : txt;
+        document.getElementById(fieldId).value = val;
+        valEl.textContent = val + ' euros';
+      } else {
+        document.getElementById(fieldId).value = txt;
+        valEl.textContent = txt;
+      }
+      valEl.classList.add('filled');
+    } else {
+      valEl.textContent = document.getElementById(fieldId).value || '—';
+    }
+    sfRecognition = null;
+    sfCurrentField = null;
+    sfCurrentBtn = null;
+  };
+
+  sfRecognition.onerror = function(e) {
+    if (e.error === 'aborted') return;
+    btn.classList.remove('listening');
+    btn.textContent = '🎙';
+    sfRecognition = null;
+  };
+
+  try { sfRecognition.start(); } catch(e) { btn.textContent = '🎙'; }
+}
+
+function sfStop() {
+  if (sfRecognition) { try { sfRecognition.stop(); } catch(e){} }
 }
 
 // OPTION C — sélection champ + bouton micro central
@@ -1650,7 +1741,7 @@ function cancelEntry() {
   ['fIntervention','fFourniture','fCout','fLieu','fUnite'].forEach(id => {
     document.getElementById(id).value = '';
     const v = document.getElementById('val_'+id);
-    if (v) { v.textContent = 'Toucher pour sélectionner'; v.className = 'tap-val placeholder'; }
+    if (v) { v.textContent = '—'; v.className = 'sf-val'; }
   });
   portee = 'ponctuel';
   setPortee('ponctuel');
