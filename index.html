@@ -668,7 +668,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ffffff;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#44aa44;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -1438,9 +1438,10 @@ function dictateField(fieldId, label) {
 }
 
 function setRecordIdle() {
-  document.getElementById('recordBtn').className = 'record-btn';
-  document.getElementById('recordBtn').textContent = '🎙';
-  document.getElementById('recordLabel').textContent = 'Appuyer pour dicter';
+  const btn = document.getElementById('recordBtn');
+  const lbl = document.getElementById('recordLabel');
+  if (btn) { btn.className = 'record-btn'; btn.textContent = '🎙'; }
+  if (lbl) lbl.textContent = 'Appuyer pour dicter';
 }
 
 function finishRecording() {
@@ -1803,6 +1804,7 @@ function deleteRappel(id) {
 
 function renderRappels() {
   const el = document.getElementById('rappelList');
+  if (!el) return;
   const active = rappels.filter(r => !r.done);
   const done = rappels.filter(r => r.done);
   if (!rappels.length) { el.innerHTML = '<div class="empty-state">Aucun rappel</div>'; return; }
