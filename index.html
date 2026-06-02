@@ -533,7 +533,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#aaff00;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#cc0088;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -1000,7 +1000,7 @@ function setupRecognition() {
         isRecording = false;
         recognition.stop();
       }
-    }, 5000);
+    }, 10000);
   };
 
   recognition.onend = () => {
@@ -1158,19 +1158,42 @@ function checkPortee(txt) {
   }
 }
 
+function wordsToNum(str) {
+  const map = {'zero':0,'zéro':0,'un':1,'une':1,'deux':2,'trois':3,'quatre':4,'cinq':5,'six':6,
+    'sept':7,'huit':8,'neuf':9,'dix':10,'onze':11,'douze':12,'treize':13,
+    'quatorze':14,'quinze':15,'seize':16,'vingt':20,'trente':30,'quarante':40,
+    'cinquante':50,'soixante':60,'cent':100};
+  let s = str.toLowerCase();
+  Object.entries(map).forEach(([w,n]) => {
+    s = s.replace(new RegExp('\b'+w+'\b','g'), ' '+n+' ');
+  });
+  s = s.replace(/\s*(\d+)\s+(\d+)\s*/g, (m,a,b) => {
+    const A=parseInt(a), B=parseInt(b);
+    if (A >= 10 && B < 10) return ' '+(A+B)+' ';
+    return ' '+a+b+' ';
+  });
+  return s.trim();
+}
+
 function parseTranscript(txt) {
   const lower = txt.toLowerCase();
-  // Intervention
-  document.getElementById('fIntervention').value = txt.split('.')[0].trim();
-  // Coût
-  const costMatch = txt.match(/(\d+[\.,]?\d*)\s*euro/i);
+  const converted = wordsToNum(lower);
+
+  // COÛT
+  const costMatch = converted.match(/(\d+[.,]?\d*)\s*euro/)
+    || lower.match(/(\d+[.,]?\d*)\s*euro/);
   if (costMatch) document.getElementById('fCout').value = costMatch[1].replace(',','.');
-  // Lieu
-  const lieuMatch = txt.match(/dans\s+(?:la\s+|le\s+|l[\''])?(.+?)(?:,|\.|$)/i);
-  if (lieuMatch) document.getElementById('fLieu').value = lieuMatch[1].trim();
-  // Fourniture — après "matériau", "fourniture", "acheté"
-  const fourMatch = txt.match(/(?:fourniture|acheté|matéri\w+)\s*:?\s*(.+?)(?:,|\.|\d|pour|$)/i);
+
+  // FOURNITURE
+  const fourMatch = lower.match(/(?:fourniture[s]?|matériau[x]?|acheté|avec)\s*:?\s*([^,.\d][^,.]{2,50}?)(?=,|\.|\d|coût|euro|pour|$)/i);
   if (fourMatch) document.getElementById('fFourniture').value = fourMatch[1].trim();
+
+  // LIEU
+  const lieuMatch = lower.match(/(?:dans|au niveau de|au|à la|à l[e'])\s+(?:la |le |l')?([^,.]{3,40}?)(?=,|\.|$)/i);
+  if (lieuMatch) document.getElementById('fLieu').value = lieuMatch[1].trim();
+
+  // INTERVENTION
+  document.getElementById('fIntervention').value = txt.split(/[,.]/)[0].trim();
 }
 
 // ═══════════════════════════════════════════
