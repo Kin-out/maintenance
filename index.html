@@ -668,7 +668,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#dd0055;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#00bbcc;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -765,7 +765,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
       </div>
 
       <div class="sf-row">
-        <label class="sf-label">Cout (euros)</label>
+        <label class="sf-label">Coût — pas de centimes</label>
         <div class="sf-input-row">
           <div class="sf-val" id="val_fCout">—</div>
           <div id="vu_fCout" class="vu-mini">
@@ -1308,10 +1308,10 @@ function sfStart(fieldId, btn) {
     if (txt) {
       let val = txt;
       if (fieldId === 'fCout') {
-        // Prend uniquement ce qui est avant "euro", ignore la suite
+        // Convertit et prend uniquement le premier entier
         const norm = normalizeStr(txt);
-        const beforeEuro = norm.split(/euros?/)[0].trim();
-        const conv = wordsToNum(beforeEuro);
+        const conv = wordsToNum(norm);
+        // Premier nombre entier trouvé (ignore les décimales)
         const m = conv.match(/(\d+)/);
         val = m ? m[1] : '0';
         valEl.textContent = val + ' €';
