@@ -544,7 +544,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#88bb44;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#eeeecc;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
@@ -586,7 +586,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
           <span id="kw_intervention"  class="kw-tag">③ intervention</span>
           <span id="kw_fourniture"    class="kw-tag">④ fourniture</span>
           <span id="kw_cout"          class="kw-tag">⑤ coût … euros</span>
-          <span id="kw_surveiller"    class="kw-tag kw-dim">à surveiller</span>
+          <span id="kw_surveiller"    class="kw-tag" style="background:rgba(196,122,106,0.3);color:#ff9977;border-color:rgba(196,122,106,0.6)">⚠ à surveiller</span>
         </div>
       </div>
       <!-- TRANSCRIPTION -->
@@ -1052,7 +1052,7 @@ function highlightKeywords(txt) {
     kw_intervention: ['intervention','réparé','changé','installé','remplacé','posé','fixé','nettoyé','inspecté','contrôlé','testé','peint','percé','scellé','graissé','réglé','serré'],
     kw_fourniture:   ['fourniture','matériau','acheté','joint','silicone','colle','vis','cheville','câble','interrupteur','ampoule','filtre','siphon','raccord','dalle','carrelage'],
     kw_cout:         ['euro','coût','coute','coûte','prix','payé'],
-    kw_surveiller:   ['surveiller','à surveiller','surveille','attention','vérifier']
+    kw_surveiller:   ['surveiller','a surveiller','surveille','attention','verifier']
   };
   Object.entries(map).forEach(([id, keywords]) => {
     const el = document.getElementById(id);
