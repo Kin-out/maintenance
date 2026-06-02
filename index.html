@@ -319,12 +319,12 @@ select.field-input { cursor: pointer; }
 }
 .tap-field:active { transform: scale(0.98); }
 .tap-field.selected {
-  border-color: #0088ff;
-  background: #0055cc;
-  box-shadow: 0 0 0 3px rgba(0,136,255,0.4);
+  border-color: #ff6600 !important;
+  background: #ff6600 !important;
+  box-shadow: 0 0 0 4px rgba(255,102,0,0.6) !important;
 }
-.tap-field.selected .tap-val { color: #ffffff; font-style: normal; }
-.tap-field.selected .tap-icon { opacity: 1; }
+.tap-field.selected .tap-val { color: #ffffff !important; font-style: normal !important; font-weight: 700 !important; }
+.tap-field.selected .tap-icon { opacity: 1 !important; }
 .tap-field.listening {
   border-color: #cc2200;
   background: rgba(204,34,0,0.12);
@@ -619,7 +619,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <body>
 
 <div class="app-header">
-  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ffffff;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">⚙ Carnet de Maintenance <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ff6600;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
