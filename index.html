@@ -1704,8 +1704,8 @@ function sfStart(fieldId, btn) {
   const valEl = document.getElementById('val_'+fieldId);
   valEl.textContent = '...';
   valEl.className = 'sf-val listening';
-  // RESET complet du champ pour permettre la modification
-  document.getElementById(fieldId).value = '';
+  // On garde l'ancienne valeur en mémoire - on écrasera seulement si nouveau texte capturé
+  const previousValue = document.getElementById(fieldId).value;
 
   sfRecognition = new SR();
   sfRecognition.lang = 'fr-FR';
@@ -1740,10 +1740,8 @@ function sfStart(fieldId, btn) {
     if (txt) {
       let val = txt;
       if (fieldId === 'fCout') {
-        // Convertit et prend uniquement le premier entier
         const norm = normalizeStr(txt);
         const conv = wordsToNum(norm);
-        // Premier nombre entier trouvé (ignore les décimales)
         const m = conv.match(/(\d+)/);
         val = m ? m[1] : '0';
         valEl.textContent = val + ' €';
@@ -1753,9 +1751,11 @@ function sfStart(fieldId, btn) {
       document.getElementById(fieldId).value = val;
       valEl.className = 'sf-val filled';
     } else {
-      const existing = document.getElementById(fieldId).value;
-      valEl.textContent = existing || '—';
-      valEl.className = existing ? 'sf-val filled' : 'sf-val';
+      // Rien capturé — restaurer l'ancienne valeur
+      const restored = previousValue || '';
+      document.getElementById(fieldId).value = restored;
+      valEl.textContent = restored || '—';
+      valEl.className = restored ? 'sf-val filled' : 'sf-val';
     }
     sfRecognition = null;
   };
