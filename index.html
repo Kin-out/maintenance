@@ -1724,14 +1724,10 @@ function sfStart(fieldId, btn) {
   };
 
   sfRecognition.onend = function() {
+    // Ne pas relancer automatiquement - laisser l'utilisateur appuyer manuellement
     if (btn.classList.contains('listening') && !sfStopping) {
-      // iOS coupe apres silence - relancer apres court delai
-      setTimeout(() => {
-        if (btn.classList.contains('listening') && !sfStopping) {
-          try { sfRecognition.start(); } catch(e) { console.log('iOS restart failed:', e); }
-        }
-      }, 500);
-      return;
+      btn.classList.remove('listening');
+      btn.textContent = '🎙';
     }
     sfStopVu();
     btn.classList.remove('listening');
