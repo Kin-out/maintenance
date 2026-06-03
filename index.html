@@ -1704,14 +1704,12 @@ function sfStart(fieldId, btn) {
   const valEl = document.getElementById('val_'+fieldId);
   valEl.textContent = '...';
   valEl.className = 'sf-val listening';
-  // On garde l'ancienne valeur en mémoire - on écrasera seulement si nouveau texte capturé
-  const previousValue = document.getElementById(fieldId).value;
 
   sfRecognition = new SR();
   sfRecognition.lang = 'fr-FR';
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  sfRecognition.continuous = false;
-  sfRecognition.interimResults = !isIOS;
+  sfRecognition.continuous = false; // false works on both iOS and Mac
+  sfRecognition.interimResults = !isIOS; // iOS doesn't support interimResults
   let finalTxt = '';
 
   sfRecognition.onresult = function(e) {
@@ -1724,10 +1722,14 @@ function sfStart(fieldId, btn) {
   };
 
   sfRecognition.onend = function() {
-    // Ne pas relancer automatiquement - laisser l'utilisateur appuyer manuellement
     if (btn.classList.contains('listening') && !sfStopping) {
-      btn.classList.remove('listening');
-      btn.textContent = '🎙';
+      // iOS coupe apres silence - relancer apres court delai
+      setTimeout(() => {
+        if (btn.classList.contains('listening') && !sfStopping) {
+          try { sfRecognition.start(); } catch(e) {}
+        }
+      }, 150);
+      return;
     }
     sfStopVu();
     btn.classList.remove('listening');
@@ -1736,8 +1738,10 @@ function sfStart(fieldId, btn) {
     if (txt) {
       let val = txt;
       if (fieldId === 'fCout') {
+        // Convertit et prend uniquement le premier entier
         const norm = normalizeStr(txt);
         const conv = wordsToNum(norm);
+        // Premier nombre entier trouvé (ignore les décimales)
         const m = conv.match(/(\d+)/);
         val = m ? m[1] : '0';
         valEl.textContent = val + ' €';
@@ -1747,11 +1751,9 @@ function sfStart(fieldId, btn) {
       document.getElementById(fieldId).value = val;
       valEl.className = 'sf-val filled';
     } else {
-      // Rien capturé — restaurer l'ancienne valeur
-      const restored = previousValue || '';
-      document.getElementById(fieldId).value = restored;
-      valEl.textContent = restored || '—';
-      valEl.className = restored ? 'sf-val filled' : 'sf-val';
+      const existing = document.getElementById(fieldId).value;
+      valEl.textContent = existing || '—';
+      valEl.className = existing ? 'sf-val filled' : 'sf-val';
     }
     sfRecognition = null;
   };
@@ -1765,13 +1767,10 @@ function sfStart(fieldId, btn) {
   };
 
   try {
-    sfStopVu();
-    console.log('Starting recognition for:', fieldId);
+    sfStopVu(); // Stop any previous vumeter
     sfRecognition.start();
-    console.log('Recognition started OK for:', fieldId);
     if (!/iPad|iPhone|iPod/.test(navigator.userAgent)) sfStartVu(fieldId);
   } catch(e) {
-    console.log('Recognition start FAILED for:', fieldId, e.message);
     btn.classList.remove('listening');
     btn.textContent = '🎙';
   }
@@ -1805,7 +1804,7 @@ function sfToggle(fieldId, btn) {
   sfStopVu();
   sfStopping = false;
   // Small delay on iOS to let previous recognition fully release
-  setTimeout(() => sfStart(fieldId, btn), 800);
+  setTimeout(() => sfStart(fieldId, btn), 300);
 }
 
 // OPTION C — sélection champ + bouton micro central
@@ -2397,6 +2396,7 @@ function addRappel() {
   const desc = descHidden || (descDisplay !== '—' ? descDisplay : '');
   const empl = document.getElementById('rEmplacement').value.trim();
   if (!desc) { notify('Veuillez saisir une description'); return; }
+  if (desc.length > 500) { notify('Texte trop long — max 500 caractères (' + desc.length + ' saisis)'); return; }
   if (desc.length > 500) { notify('Texte trop long — maximum 500 caractères (' + desc.length + ' saisis)'); return; }
   rappels.push({ id: Date.now(), propId: prop, propName: getPropName(prop), type, desc, empl, done: false, created: new Date().toLocaleDateString('fr-FR') });
   save('rappels', rappels);
