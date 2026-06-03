@@ -1094,7 +1094,7 @@ const DEFAULT_PROPS = [
   { id:'berry', name:'Jouet — Place de Berry',addr:'2 Place de Berry, Jouet-sur-l\'Aubois 18320',              lat:47.1050, lng:2.9725,  units:['Habitation 1','Habitation 2','Habitation 3','Habitation 4','Habitation 5','Habitation 6','Habitation 7'], timer:false },
   { id:'creuse',name:'Jouet — Rue Creuse',  addr:'117 Rue Creuse, Jouet-sur-l\'Aubois 18320',                  lat:47.1040, lng:2.9730,  units:[], timer:false },
   { id:'arcach',name:'Arcachon',            addr:'1 Place du Dr Peyneau, Arcachon 33120',                      lat:44.6611, lng:-1.1664, units:['Habitation principale'], timer:false },
-  { id:'paris', name:'Paris — Bagnolet',   addr:'24 Rue de Bagnolet, Paris 75020',                             lat:48.8545, lng:2.3980,  units:['Appt 1','Appt 2','Appt 3','Appt 4','Appt 5','Appt 6','Appt 7','Appt 8','Appt 9','Appt 10','Appt 11','Appt 12','Appt 13','Mag 1','Mag 2','Mag 3','Mag 4'], timer:false }
+  { id:'paris', name:'Paris — Bagnolet',   addr:'24 Rue de Bagnolet, Paris 75020',                             lat:48.8567, lng:2.3970,  units:['Appt 1','Appt 2','Appt 3','Appt 4','Appt 5','Appt 6','Appt 7','Appt 8','Appt 9','Appt 10','Appt 11','Appt 12','Appt 13','Mag 1','Mag 2','Mag 3','Mag 4'], timer:false }
 ];
 
 function load(key, def) {
@@ -1424,7 +1424,7 @@ function detectProp(lat, lng) {
   proprietes.forEach(p => {
     if (!p.lat) return;
     const d = Math.sqrt(Math.pow(lat - p.lat, 2) + Math.pow(lng - p.lng, 2));
-    if (d < 0.002 && d < minDist) { minDist = d; closest = p; }
+    if (d < 0.005 && d < minDist) { minDist = d; closest = p; }
   });
   return closest;
 }
