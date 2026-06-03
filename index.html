@@ -1704,12 +1704,14 @@ function sfStart(fieldId, btn) {
   const valEl = document.getElementById('val_'+fieldId);
   valEl.textContent = '...';
   valEl.className = 'sf-val listening';
+  // RESET complet du champ pour permettre la modification
+  document.getElementById(fieldId).value = '';
 
   sfRecognition = new SR();
   sfRecognition.lang = 'fr-FR';
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  sfRecognition.continuous = false; // false works on both iOS and Mac
-  sfRecognition.interimResults = !isIOS; // iOS doesn't support interimResults
+  sfRecognition.continuous = false;
+  sfRecognition.interimResults = !isIOS;
   let finalTxt = '';
 
   sfRecognition.onresult = function(e) {
@@ -2283,6 +2285,8 @@ function saveEntry() {
   const fourniture = getFieldVal('fFourniture');
   const coutRaw = getFieldVal('fCout');
   const cout = parseFloat(coutRaw) || 0;
+  const observation = getFieldVal('fObservation');
+  const action = getFieldVal('fAction');
   if (!intervention || intervention === '—') { notify('Veuillez renseigner une intervention'); return; }
   const now = new Date();
   const entry = {
@@ -2292,7 +2296,7 @@ function saveEntry() {
     propId: prop,
     surveiller: document.getElementById('portSurveiller').classList.contains('active-surv'),
     propName: getPropName(prop),
-    unite, lieu, portee, intervention, fourniture, cout
+    unite, lieu, portee, intervention, fourniture, cout, observation, action
   };
   entries.push(entry);
   save('entries', entries);
@@ -2394,6 +2398,7 @@ function addRappel() {
   const desc = descHidden || (descDisplay !== '—' ? descDisplay : '');
   const empl = document.getElementById('rEmplacement').value.trim();
   if (!desc) { notify('Veuillez saisir une description'); return; }
+  if (desc.length > 500) { notify('Texte trop long — maximum 500 caractères (' + desc.length + ' saisis)'); return; }
   rappels.push({ id: Date.now(), propId: prop, propName: getPropName(prop), type, desc, empl, done: false, created: new Date().toLocaleDateString('fr-FR') });
   save('rappels', rappels);
   document.getElementById('rDesc').value = '';
