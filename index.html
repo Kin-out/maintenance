@@ -1674,15 +1674,8 @@ function sfStopVu() {
 function sfStart(fieldId, btn) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { alert('Micro non disponible'); return; }
-  // Nettoyer proprement la reconnaissance precedente
-  if (sfRecognition) {
-    sfRecognition.onresult = null;
-    sfRecognition.onend = null;
-    sfRecognition.onerror = null;
-    try { sfRecognition.abort(); } catch(e){}
-    sfRecognition = null;
-  }
-  // Nettoyer le bouton precedent
+
+  // Nettoyer le bouton précédent
   if (sfCurrentBtn && sfCurrentBtn !== btn) {
     sfCurrentBtn.classList.remove('listening');
     sfCurrentBtn.textContent = '🎙';
@@ -1697,33 +1690,31 @@ function sfStart(fieldId, btn) {
   const valEl = document.getElementById('val_'+fieldId);
   valEl.textContent = '...';
   valEl.className = 'sf-val listening';
+  const previousValue = document.getElementById(fieldId).value;
+
+  // Toujours créer une nouvelle instance — iOS l'exige
+  if (sfRecognition) {
+    sfRecognition.onresult = null;
+    sfRecognition.onend = null;
+    sfRecognition.onerror = null;
+    try { sfRecognition.abort(); } catch(e){}
+    sfRecognition = null;
+  }
 
   sfRecognition = new SR();
   sfRecognition.lang = 'fr-FR';
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  sfRecognition.continuous = false; // false works on both iOS and Mac
-  sfRecognition.interimResults = !isIOS; // iOS doesn't support interimResults
+  sfRecognition.continuous = false;
+  sfRecognition.interimResults = false; // false = plus fiable sur iOS
   let finalTxt = '';
 
   sfRecognition.onresult = function(e) {
-    let interim = '';
-    for (let i=0; i<e.results.length; i++) {
+    for (let i = 0; i < e.results.length; i++) {
       if (e.results[i].isFinal) finalTxt += e.results[i][0].transcript + ' ';
-      else interim += e.results[i][0].transcript;
     }
-    valEl.textContent = (finalTxt + interim).trim() || '...';
+    if (finalTxt.trim()) valEl.textContent = finalTxt.trim();
   };
 
   sfRecognition.onend = function() {
-    if (btn.classList.contains('listening') && !sfStopping) {
-      // iOS coupe apres silence - relancer apres court delai
-      setTimeout(() => {
-        if (btn.classList.contains('listening') && !sfStopping) {
-          try { sfRecognition.start(); } catch(e) {}
-        }
-      }, 150);
-      return;
-    }
     sfStopVu();
     btn.classList.remove('listening');
     btn.textContent = '🎙';
@@ -1731,10 +1722,8 @@ function sfStart(fieldId, btn) {
     if (txt) {
       let val = txt;
       if (fieldId === 'fCout') {
-        // Convertit et prend uniquement le premier entier
         const norm = normalizeStr(txt);
         const conv = wordsToNum(norm);
-        // Premier nombre entier trouvé (ignore les décimales)
         const m = conv.match(/(\d+)/);
         val = m ? m[1] : '0';
         valEl.textContent = val + ' €';
@@ -1744,9 +1733,10 @@ function sfStart(fieldId, btn) {
       document.getElementById(fieldId).value = val;
       valEl.className = 'sf-val filled';
     } else {
-      const existing = document.getElementById(fieldId).value;
-      valEl.textContent = existing || '—';
-      valEl.className = existing ? 'sf-val filled' : 'sf-val';
+      // Rien capturé — restaurer
+      document.getElementById(fieldId).value = previousValue;
+      valEl.textContent = previousValue || '—';
+      valEl.className = previousValue ? 'sf-val filled' : 'sf-val';
     }
     sfRecognition = null;
   };
@@ -1756,32 +1746,35 @@ function sfStart(fieldId, btn) {
     sfStopVu();
     btn.classList.remove('listening');
     btn.textContent = '🎙';
+    valEl.textContent = previousValue || '—';
+    valEl.className = previousValue ? 'sf-val filled' : 'sf-val';
+    document.getElementById(fieldId).value = previousValue;
     sfRecognition = null;
   };
 
   try {
-    sfStopVu(); // Stop any previous vumeter
     sfRecognition.start();
     if (!/iPad|iPhone|iPod/.test(navigator.userAgent)) sfStartVu(fieldId);
   } catch(e) {
     btn.classList.remove('listening');
     btn.textContent = '🎙';
+    sfRecognition = null;
   }
 }
 
 function sfStop() {
   sfStopping = true;
   if (sfRecognition) { try { sfRecognition.stop(); } catch(e){} }
-  setTimeout(() => { if (!sfRecognition) sfStopVu(); }, 500);
+  setTimeout(() => { if (!sfRecognition) sfStopVu(); }, 300);
 }
 
 function sfToggle(fieldId, btn) {
-  // If already recording this field - stop
+  // Si ce bouton est déjà en écoute — arrêter
   if (btn.classList.contains('listening')) {
     sfStop();
     return;
   }
-  // Always fully reset before starting a new field
+  // Arrêter toute reconnaissance en cours
   if (sfRecognition) {
     sfRecognition.onresult = null;
     sfRecognition.onend = null;
@@ -1796,9 +1789,10 @@ function sfToggle(fieldId, btn) {
   }
   sfStopVu();
   sfStopping = false;
-  // Small delay on iOS to let previous recognition fully release
-  setTimeout(() => sfStart(fieldId, btn), 300);
+  // Délai pour iOS — laisser le temps au micro de se libérer
+  setTimeout(() => sfStart(fieldId, btn), 500);
 }
+
 
 // OPTION C — sélection champ + bouton micro central
 let selectedFieldId = null;
