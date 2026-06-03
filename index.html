@@ -339,17 +339,17 @@ select.field-input { cursor: pointer; }
 }
 .sf-mic {
   width: 52px; height: 52px; border-radius: 50%;
-  background: #dc2626; border: none; color: white;
+  background: #d97706; border: none; color: white;
   font-size: 24px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; transition: all 0.15s;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
-  box-shadow: 0 4px 12px rgba(220,38,38,0.35);
+  box-shadow: 0 4px 12px rgba(217,119,6,0.35);
 }
 .sf-mic:active, .sf-mic.listening {
-  background: #ff1100; transform: scale(1.15);
-  box-shadow: 0 0 16px rgba(255,17,0,0.6);
+  background: #f59e0b; transform: scale(1.15);
+  box-shadow: 0 0 16px rgba(245,158,11,0.6);
 }
 
 /* SURVEILLANCE */
@@ -704,34 +704,25 @@ tr:hover td { background: var(--surface2); color: var(--text); }
   from { transform: translateY(-100%); opacity:0; }
   to   { transform: translateY(0);     opacity:1; }
 }
-.tap-select { cursor:pointer; transition: border-color 0.2s, background 0.2s; }
-.tap-select:active { transform: scale(0.98); }
-.tap-select.selected { border-color: var(--accent) !important; background: rgba(37,99,235,0.08) !important; }
-.tap-select.selected .sf-val { color: var(--accent) !important; }
-.tap-arrow { font-size:12px; color:var(--text3); margin-left:8px; flex-shrink:0; }
-.tap-select.selected .tap-arrow { color: var(--accent); }
 hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
 .empty-state { text-align: center; padding: 40px; color: var(--text3); font-size: 13px; }
 .section-title { font-family: var(--serif); font-size: 15px; color: var(--text2); margin-bottom: 12px; }
-
-/* SYNC DOT */
 .sync-dot { width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.3);transition:all 0.3s; }
 .sync-dot.ok { background:#16a34a;box-shadow:0 0 6px #16a34a; }
 .sync-dot.error { background:#dc2626;box-shadow:0 0 6px #dc2626; }
 .sync-dot.syncing { background:#f59e0b;animation:pulse 1s infinite; }
-
 </style>
 </head>
 <body>
 
 <div class="app-header">
-  <div class="app-title">🏠 Le Régisseur <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#16a34a;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">🏠 Le Régisseur <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#d97706;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
   </div>
   <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,0.8)">
-    <div class="sync-dot" id="syncDot" style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.3)"></div>
+    <div class="sync-dot" id="syncDot"></div>
     <span id="syncLabel">—</span>
   </div>
 </div>
@@ -772,75 +763,96 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 
       <div class="sf-row">
         <label class="sf-label">Situation géographique</label>
-        <div class="sf-input-row tap-select" id="tap_fLieu" onclick="selectFieldForMic('fLieu',this)">
+        <div class="sf-input-row">
           <div class="sf-val" id="val_fLieu">—</div>
-          <span class="tap-arrow">▶</span>
+          <div id="vu_fLieu" class="vu-mini">
+              <div class="vu-mini-bar"></div>
+              <div class="vu-mini-bar"></div>
+              <div class="vu-mini-bar"></div>
+            </div>
+            <button class="sf-mic" onclick="sfToggle('fLieu',this)">🎙</button>
           <input type="hidden" id="fLieu">
         </div>
       </div>
 
       <div class="sf-row">
         <label class="sf-label">Pièce</label>
-        <div class="sf-input-row tap-select" id="tap_fUnite" onclick="selectFieldForMic('fUnite',this)">
+        <div class="sf-input-row">
           <div class="sf-val" id="val_fUnite">—</div>
-          <span class="tap-arrow">▶</span>
+          <div id="vu_fUnite" class="vu-mini">
+              <div class="vu-mini-bar"></div>
+              <div class="vu-mini-bar"></div>
+              <div class="vu-mini-bar"></div>
+            </div>
+            <button class="sf-mic" onclick="sfToggle('fUnite',this)">🎙</button>
           <input type="hidden" id="fUnite">
         </div>
       </div>
 
       <div class="sf-row">
         <label class="sf-label">Intervention</label>
-        <div class="sf-input-row tap-select" id="tap_fIntervention" onclick="selectFieldForMic('fIntervention',this)">
+        <div class="sf-input-row">
           <div class="sf-val" id="val_fIntervention">—</div>
-          <span class="tap-arrow">▶</span>
+          <div id="vu_fIntervention" class="vu-mini">
+              <div class="vu-mini-bar"></div>
+              <div class="vu-mini-bar"></div>
+              <div class="vu-mini-bar"></div>
+            </div>
+            <button class="sf-mic" onclick="sfToggle('fIntervention',this)">🎙</button>
           <input type="hidden" id="fIntervention">
         </div>
       </div>
 
       <div class="sf-row">
         <label class="sf-label">Fourniture</label>
-        <div class="sf-input-row tap-select" id="tap_fFourniture" onclick="selectFieldForMic('fFourniture',this)">
+        <div class="sf-input-row">
           <div class="sf-val" id="val_fFourniture">—</div>
-          <span class="tap-arrow">▶</span>
+          <div id="vu_fFourniture" class="vu-mini">
+              <div class="vu-mini-bar"></div>
+              <div class="vu-mini-bar"></div>
+              <div class="vu-mini-bar"></div>
+            </div>
+            <button class="sf-mic" onclick="sfToggle('fFourniture',this)">🎙</button>
           <input type="hidden" id="fFourniture">
         </div>
       </div>
 
       <div class="sf-row">
         <label class="sf-label">Coût — pas de centimes</label>
-        <div class="sf-input-row tap-select" id="tap_fCout" onclick="selectFieldForMic('fCout',this)">
+        <div class="sf-input-row">
           <div class="sf-val" id="val_fCout">—</div>
-          <span class="tap-arrow">▶</span>
+          <div id="vu_fCout" class="vu-mini">
+              <div class="vu-mini-bar"></div>
+              <div class="vu-mini-bar"></div>
+              <div class="vu-mini-bar"></div>
+            </div>
+            <button class="sf-mic" onclick="sfToggle('fCout',this)">🎙</button>
           <input type="hidden" id="fCout">
         </div>
       </div>
 
+
       <div class="sf-row">
         <label class="sf-label">Observation</label>
-        <div class="sf-input-row tap-select" id="tap_fObservation" onclick="selectFieldForMic('fObservation',this)">
+        <div class="sf-input-row">
           <div class="sf-val" id="val_fObservation">—</div>
-          <span class="tap-arrow">▶</span>
+          <div id="vu_fObservation" class="vu-mini"><div class="vu-mini-bar"></div><div class="vu-mini-bar"></div><div class="vu-mini-bar"></div></div>
+          <button class="sf-mic" onclick="sfToggle('fObservation',this)">🎙</button>
           <input type="hidden" id="fObservation">
         </div>
       </div>
 
       <div class="sf-row">
-        <label class="sf-label">Action à prévoir</label>
-        <div class="sf-input-row tap-select" id="tap_fAction" onclick="selectFieldForMic('fAction',this)">
+        <label class="sf-label">Action a prevoir</label>
+        <div class="sf-input-row">
           <div class="sf-val" id="val_fAction">—</div>
-          <span class="tap-arrow">▶</span>
+          <div id="vu_fAction" class="vu-mini"><div class="vu-mini-bar"></div><div class="vu-mini-bar"></div><div class="vu-mini-bar"></div></div>
+          <button class="sf-mic" onclick="sfToggle('fAction',this)">🎙</button>
           <input type="hidden" id="fAction">
         </div>
       </div>
 
     </div><!-- /sf-fields -->
-
-    <!-- BOUTON MICRO CENTRAL -->
-    <div id="centralMicZone" style="text-align:center;margin:16px 0">
-      <div id="centralFieldLabel" style="font-size:12px;color:var(--text3);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.08em">Tapez un champ pour le sélectionner</div>
-      <button id="centralMicBtn" onclick="toggleCentralMic()" style="width:72px;height:72px;border-radius:50%;background:#dc2626;border:none;color:white;font-size:28px;cursor:pointer;box-shadow:0 4px 16px rgba(220,38,38,0.4);transition:all 0.2s;-webkit-tap-highlight-color:transparent" disabled>🎙</button>
-      <div id="centralMicStatus" style="font-size:12px;color:var(--text3);margin-top:8px"> </div>
-    </div>
 
     <!-- BARRE D'ACTIONS -->
     <div class="action-bar">
@@ -1005,7 +1017,6 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
     <button class="btn btn-primary" onclick="addPropriete()">Ajouter</button>
   </div>
 </div>
-
 
 <!-- ═══════════ SYNC GOOGLE SHEETS ═══════════ -->
 <div class="panel" id="panel-sync">
@@ -1316,6 +1327,7 @@ function renderSyncConfigInput() {
 
 
 
+
 document.addEventListener('DOMContentLoaded', () => {
   populateAllSelects();
   renderRappels();
@@ -1327,11 +1339,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderVisites();
   initGeo();
   setupRecognition();
-  // Charger depuis Sheets si sync activée
-  // Sync automatique si 24h écoulées
   syncIfDue();
-  // Pré-rendre le panel sync
-  setTimeout(() => { renderSyncPanel(); renderSyncConfigInput(); }, 100);
   // Attacher les clicks sur les champs via JS (plus fiable que onclick HTML)
   ['fLieu','fUnite','fIntervention','fFourniture','fCout'].forEach(function(id) {
     var el = document.getElementById('tap_'+id);
@@ -2235,136 +2243,6 @@ function parseTranscript(txt) {
   }
 }
 
-
-// ═══════════════════════════════════════════
-// MICRO CENTRAL — UN SEUL BOUTON POUR TOUS LES CHAMPS
-// ═══════════════════════════════════════════
-let centralField = null;
-let centralRecognition = null;
-let centralIsListening = false;
-let centralFinalTxt = '';
-
-const FIELD_LABELS = {
-  fLieu: 'Situation géographique',
-  fUnite: 'Pièce',
-  fIntervention: 'Intervention',
-  fFourniture: 'Fourniture',
-  fCout: 'Coût',
-  fObservation: 'Observation',
-  fAction: 'Action à prévoir'
-};
-
-function selectFieldForMic(fieldId, el) {
-  // Désélectionner tous
-  document.querySelectorAll('.tap-select').forEach(t => t.classList.remove('selected'));
-  // Sélectionner celui-ci
-  el.classList.add('selected');
-  centralField = fieldId;
-  // Mettre à jour le label
-  document.getElementById('centralFieldLabel').textContent = '▶ ' + (FIELD_LABELS[fieldId] || fieldId) + ' sélectionné';
-  // Activer le bouton micro
-  const btn = document.getElementById('centralMicBtn');
-  btn.disabled = false;
-  btn.style.opacity = '1';
-  // Si micro en cours sur un autre champ, arrêter
-  if (centralIsListening) stopCentralMic();
-}
-
-function toggleCentralMic() {
-  if (!centralField) return;
-  if (centralIsListening) {
-    stopCentralMic();
-  } else {
-    startCentralMic();
-  }
-}
-
-function startCentralMic() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { notify('Micro non disponible'); return; }
-  if (centralRecognition) {
-    try { centralRecognition.abort(); } catch(e) {}
-    centralRecognition = null;
-  }
-  const btn = document.getElementById('centralMicBtn');
-  const status = document.getElementById('centralMicStatus');
-  const valEl = document.getElementById('val_' + centralField);
-  centralFinalTxt = '';
-  centralIsListening = true;
-  btn.textContent = '⏹';
-  btn.style.animation = 'pulse 1s infinite';
-  btn.style.background = '#ff1100';
-  status.textContent = 'En écoute…';
-  valEl.className = 'sf-val listening';
-
-  centralRecognition = new SR();
-  centralRecognition.lang = 'fr-FR';
-  centralRecognition.continuous = false;
-  centralRecognition.interimResults = false;
-
-  centralRecognition.onresult = function(e) {
-    let txt = '';
-    for (let i = 0; i < e.results.length; i++) {
-      if (e.results[i].isFinal) txt += e.results[i][0].transcript + ' ';
-    }
-    centralFinalTxt = txt.trim();
-    if (centralFinalTxt) valEl.textContent = centralFinalTxt;
-  };
-
-  centralRecognition.onend = function() {
-    centralIsListening = false;
-    btn.textContent = '🎙';
-    btn.style.animation = '';
-    btn.style.background = '#dc2626';
-    const txt = centralFinalTxt.trim();
-    if (txt) {
-      let val = txt;
-      if (centralField === 'fCout') {
-        const norm = normalizeStr(txt);
-        const conv = wordsToNum(norm);
-        const m = conv.match(/(\d+)/);
-        val = m ? m[1] : '0';
-        valEl.textContent = val + ' €';
-      } else {
-        valEl.textContent = txt;
-      }
-      document.getElementById(centralField).value = val;
-      valEl.className = 'sf-val filled';
-      status.textContent = '✅ Enregistré';
-    } else {
-      const existing = document.getElementById(centralField).value;
-      valEl.textContent = existing || '—';
-      valEl.className = existing ? 'sf-val filled' : 'sf-val';
-      status.textContent = 'Rien capturé — réessayez';
-    }
-    centralRecognition = null;
-  };
-
-  centralRecognition.onerror = function(e) {
-    if (e.error === 'aborted') return;
-    centralIsListening = false;
-    btn.textContent = '🎙';
-    btn.style.animation = '';
-    btn.style.background = '#dc2626';
-    status.textContent = 'Erreur: ' + e.error;
-    centralRecognition = null;
-  };
-
-  try {
-    centralRecognition.start();
-  } catch(e) {
-    centralIsListening = false;
-    btn.textContent = '🎙';
-    status.textContent = 'Impossible de démarrer';
-  }
-}
-
-function stopCentralMic() {
-  if (centralRecognition) {
-    try { centralRecognition.stop(); } catch(e) {}
-  }
-}
-
 // ═══════════════════════════════════════════
 // PORTÉE
 // ═══════════════════════════════════════════
@@ -2511,8 +2389,6 @@ function addRappel() {
   const desc = descHidden || (descDisplay !== '—' ? descDisplay : '');
   const empl = document.getElementById('rEmplacement').value.trim();
   if (!desc) { notify('Veuillez saisir une description'); return; }
-  if (desc.length > 500) { notify('Texte trop long — max 500 caractères (' + desc.length + ' saisis)'); return; }
-  if (desc.length > 500) { notify('Texte trop long — maximum 500 caractères (' + desc.length + ' saisis)'); return; }
   rappels.push({ id: Date.now(), propId: prop, propName: getPropName(prop), type, desc, empl, done: false, created: new Date().toLocaleDateString('fr-FR') });
   save('rappels', rappels);
   document.getElementById('rDesc').value = '';
