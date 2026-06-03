@@ -707,15 +707,26 @@ tr:hover td { background: var(--surface2); color: var(--text); }
 hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
 .empty-state { text-align: center; padding: 40px; color: var(--text3); font-size: 13px; }
 .section-title { font-family: var(--serif); font-size: 15px; color: var(--text2); margin-bottom: 12px; }
+
+/* SYNC DOT */
+.sync-dot { width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.3);transition:all 0.3s; }
+.sync-dot.ok { background:#16a34a;box-shadow:0 0 6px #16a34a; }
+.sync-dot.error { background:#dc2626;box-shadow:0 0 6px #dc2626; }
+.sync-dot.syncing { background:#f59e0b;animation:pulse 1s infinite; }
+
 </style>
 </head>
 <body>
 
 <div class="app-header">
-  <div class="app-title">🏠 Le Régisseur <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#9333ea;margin-left:8px;vertical-align:middle"></span></div>
+  <div class="app-title">🏠 Le Régisseur <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#16a34a;margin-left:8px;vertical-align:middle"></span></div>
   <div class="geo-badge">
     <div class="geo-dot" id="geoDot"></div>
     <span id="geoLabel">Localisation...</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,0.8)">
+    <div class="sync-dot" id="syncDot" style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.3)"></div>
+    <span id="syncLabel">—</span>
   </div>
 </div>
 
@@ -726,6 +737,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
   <button class="tab" onclick="showTab('historique', this)">Historique</button>
   <button class="tab" onclick="showTab('efficacite', this)">Efficacité</button>
   <button class="tab" onclick="showTab('proprietes', this)">Propriétés</button>
+  <button class="tab" onclick="showTab('sync', this)">☁ Sync</button>
 </div>
 
 <div class="main">
@@ -1009,6 +1021,45 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
   </div>
 </div>
 
+
+<!-- ═══════════ SYNC GOOGLE SHEETS ═══════════ -->
+<div class="panel" id="panel-sync">
+  <div class="card">
+    <div class="card-title">☁ Synchronisation Google Sheets</div>
+    <div id="syncStatus"><div style="font-size:13px;color:var(--text2);padding:10px 0">Chargement…</div></div>
+
+    <div style="margin-bottom:20px">
+      <div class="field-label" style="margin-bottom:8px">URL du Google Apps Script</div>
+      <input class="field-input" id="syncUrlInput" placeholder="https://script.google.com/macros/s/…/exec" style="margin-bottom:10px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-secondary" id="testSyncBtn" onclick="testSync()">Tester la connexion</button>
+        <button class="btn btn-primary" id="syncSaveBtn" onclick="saveSyncConfig()" disabled>Activer la sync</button>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="section-title">Guide de configuration</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.8">
+      <div style="background:var(--surface2);border-radius:10px;padding:14px;margin-bottom:12px">
+        <strong>Étape 1</strong> — Ouvrir Google Sheets<br>
+        Allez sur <a href="https://sheets.google.com" target="_blank" style="color:var(--accent)">sheets.google.com</a> et créez un nouveau fichier appelé <strong>Le Régisseur</strong>.
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px;margin-bottom:12px">
+        <strong>Étape 2</strong> — Ouvrir l'éditeur Apps Script<br>
+        Dans le menu : <em>Extensions → Apps Script</em>. Effacez tout le contenu et collez le script fourni séparément.
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px;margin-bottom:12px">
+        <strong>Étape 3</strong> — Déployer<br>
+        Cliquez <em>Déployer → Nouveau déploiement</em>. Type : <em>Application Web</em>. Accès : <em>Tout le monde</em>. Copiez l'URL générée.
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px">
+        <strong>Étape 4</strong> — Coller l'URL ici<br>
+        Collez l'URL dans le champ ci-dessus, testez la connexion, puis activez.
+      </div>
+    </div>
+  </div>
+</div>
+
 </div><!-- /main -->
 
 <!-- MODAL DÉPART -->
@@ -1070,6 +1121,223 @@ let timerActive = false;
 // ═══════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// SYNC GOOGLE SHEETS — déclenchement toutes les 24h au démarrage
+// ═══════════════════════════════════════════════════════════════
+
+const SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 heures
+
+function getSyncConfig() {
+  return {
+    scriptUrl: localStorage.getItem('gs_script_url') || '',
+    enabled:   localStorage.getItem('gs_enabled') === 'true'
+  };
+}
+function setSyncConfig(url, enabled) {
+  localStorage.setItem('gs_script_url', url);
+  localStorage.setItem('gs_enabled', enabled ? 'true' : 'false');
+}
+
+function getLastSyncTime() {
+  const v = localStorage.getItem('gs_last_sync');
+  return v ? parseInt(v) : 0;
+}
+function setLastSyncTime() {
+  localStorage.setItem('gs_last_sync', Date.now().toString());
+}
+
+function isSyncDue() {
+  return (Date.now() - getLastSyncTime()) >= SYNC_INTERVAL_MS;
+}
+
+function getNextSyncLabel() {
+  const last = getLastSyncTime();
+  if (!last) return 'Jamais synchronisé';
+  const next = new Date(last + SYNC_INTERVAL_MS);
+  const now  = new Date();
+  if (next <= now) return 'Sync en attente';
+  const diff = Math.round((next - now) / 60000);
+  if (diff < 60) return `Prochaine sync dans ${diff} min`;
+  return `Prochaine sync dans ${Math.round(diff/60)}h`;
+}
+
+function showSyncStatus(status) {
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  if (!dot || !lbl) return;
+  const map = {
+    syncing: { bg: '#f59e0b', shadow: '#f59e0b', anim: true,  txt: 'Sync…' },
+    ok:      { bg: '#16a34a', shadow: '#16a34a', anim: false, txt: 'Synchronisé' },
+    error:   { bg: '#dc2626', shadow: '#dc2626', anim: false, txt: 'Erreur sync' },
+    off:     { bg: 'rgba(255,255,255,0.3)', shadow: 'none', anim: false, txt: '—' }
+  };
+  const s = map[status] || map.off;
+  dot.style.background  = s.bg;
+  dot.style.boxShadow   = s.shadow !== 'none' ? `0 0 6px ${s.shadow}` : 'none';
+  lbl.textContent = s.txt;
+}
+
+async function gsRequest(action, data) {
+  const cfg = getSyncConfig();
+  if (!cfg.enabled || !cfg.scriptUrl) return null;
+  try {
+    const resp = await fetch(cfg.scriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action, data })
+    });
+    return await resp.json();
+  } catch(e) {
+    console.error('Sync error:', e);
+    return null;
+  }
+}
+
+// Appelé au démarrage — sync si 24h écoulées
+async function syncIfDue() {
+  const cfg = getSyncConfig();
+  if (!cfg.enabled || !cfg.scriptUrl) { showSyncStatus('off'); return; }
+  if (!isSyncDue()) {
+    showSyncStatus('ok');
+    updateSyncPanelStatus();
+    return;
+  }
+  // 24h écoulées — on sync
+  showSyncStatus('syncing');
+  notify('🔄 Synchronisation en cours…');
+  // 1. Envoyer les données locales vers Sheets
+  const pushResp = await gsRequest('pushAll', {
+    entries, rappels, visites,
+    surveillance: load('surveillanceItems', [])
+  });
+  if (!pushResp || pushResp.status !== 'ok') {
+    showSyncStatus('error');
+    notify('❌ Erreur de synchronisation');
+    return;
+  }
+  // 2. Récupérer la version Sheets (source de vérité)
+  try {
+    const resp = await fetch(cfg.scriptUrl + '?action=getAll', { method: 'GET' });
+    const json = await resp.json();
+    if (json.status !== 'ok') throw new Error(json.message);
+    if (json.entries)       { entries = json.entries;    save('entries', entries); }
+    if (json.rappels)       { rappels = json.rappels;    save('rappels', rappels); }
+    if (json.visites)       { visites = json.visites;    save('visites', visites); }
+    if (json.surveillance)  { save('surveillanceItems', json.surveillance); }
+    setLastSyncTime();
+    showSyncStatus('ok');
+    notify('✅ Sync terminée — données à jour');
+    renderHistorique(); renderRappels(); renderVisites();
+    renderSurveillance(); renderEfficacite();
+    updateSyncPanelStatus();
+  } catch(e) {
+    showSyncStatus('error');
+    notify('❌ Erreur lors du rechargement');
+  }
+}
+
+// Sync manuelle forcée (bouton dans le panel)
+async function syncNow() {
+  const cfg = getSyncConfig();
+  if (!cfg.enabled || !cfg.scriptUrl) { notify('⚠️ Sync non configurée'); return; }
+  localStorage.removeItem('gs_last_sync'); // Forcer le déclenchement
+  await syncIfDue();
+}
+
+async function testSync() {
+  const url = document.getElementById('syncUrlInput').value.trim();
+  if (!url) { notify('⚠️ Collez d'abord l'URL du script'); return; }
+  const btn = document.getElementById('testSyncBtn');
+  btn.textContent = '⏳ Test…';
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'ping' })
+    });
+    const json = await resp.json();
+    if (json.status === 'ok') {
+      btn.textContent = '✅ Connexion OK';
+      btn.style.background = '#16a34a';
+      document.getElementById('syncSaveBtn').disabled = false;
+    } else throw new Error(json.message);
+  } catch(e) {
+    btn.textContent = '❌ Échec';
+    btn.style.background = '#dc2626';
+    notify('Erreur : ' + e.message);
+  }
+  setTimeout(() => { btn.textContent = 'Tester la connexion'; btn.style.background = ''; }, 3000);
+}
+
+function saveSyncConfig() {
+  const url = document.getElementById('syncUrlInput').value.trim();
+  setSyncConfig(url, true);
+  notify('✅ Configuration sauvegardée — sync active');
+  renderSyncPanel();
+  syncNow(); // Première sync immédiate
+}
+
+function disableSync() {
+  setSyncConfig(getSyncConfig().scriptUrl, false);
+  localStorage.removeItem('gs_last_sync');
+  showSyncStatus('off');
+  renderSyncPanel();
+  notify('Sync désactivée');
+}
+
+function updateSyncPanelStatus() {
+  const el = document.getElementById('syncNextLabel');
+  if (el) el.textContent = getNextSyncLabel();
+  const lastEl = document.getElementById('syncLastLabel');
+  if (lastEl) {
+    const last = getLastSyncTime();
+    lastEl.textContent = last ? 'Dernière sync : ' + new Date(last).toLocaleString('fr-FR') : 'Jamais synchronisé';
+  }
+}
+
+function renderSyncPanel() {
+  const cfg = getSyncConfig();
+  const el = document.getElementById('syncStatus');
+  if (!el) return;
+  if (cfg.enabled && cfg.scriptUrl) {
+    el.innerHTML = `
+      <div style="background:rgba(22,163,74,0.1);border:1px solid rgba(22,163,74,0.3);border-radius:12px;padding:14px;margin-bottom:16px">
+        <div style="font-weight:700;color:#16a34a;margin-bottom:6px">✅ Sync active</div>
+        <div style="font-size:12px;color:var(--text3);word-break:break-all;margin-bottom:4px">${cfg.scriptUrl.slice(0,60)}…</div>
+        <div style="font-size:12px;color:var(--text2)" id="syncLastLabel">—</div>
+        <div style="font-size:12px;color:var(--accent);margin-top:2px" id="syncNextLabel">—</div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="syncNow()" style="font-size:12px">🔄 Synchroniser maintenant</button>
+          <button class="btn btn-danger" onclick="disableSync()" style="font-size:12px">Désactiver</button>
+        </div>
+      </div>`;
+    updateSyncPanelStatus();
+  } else {
+    el.innerHTML = `
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px">
+        <div style="font-size:13px;color:var(--text2)">Sync non configurée — suivez le guide ci-dessous.</div>
+      </div>`;
+  }
+}
+
+function renderSyncConfigInput() {
+  const cfg = getSyncConfig();
+  const inp = document.getElementById('syncUrlInput');
+  if (inp && cfg.scriptUrl) {
+    inp.value = cfg.scriptUrl;
+    document.getElementById('syncSaveBtn').disabled = false;
+  }
+}
+
+  const cfg = getSyncConfig();
+  const inp = document.getElementById('syncUrlInput');
+  if (inp && cfg.scriptUrl) {
+    inp.value = cfg.scriptUrl;
+    document.getElementById('syncSaveBtn').disabled = false;
+  }
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
   populateAllSelects();
   renderRappels();
@@ -1081,6 +1349,11 @@ document.addEventListener('DOMContentLoaded', () => {
   renderVisites();
   initGeo();
   setupRecognition();
+  // Charger depuis Sheets si sync activée
+  // Sync automatique si 24h écoulées
+  syncIfDue();
+  // Pré-rendre le panel sync
+  setTimeout(() => { renderSyncPanel(); renderSyncConfigInput(); }, 100);
   // Attacher les clicks sur les champs via JS (plus fiable que onclick HTML)
   ['fLieu','fUnite','fIntervention','fFourniture','fCout'].forEach(function(id) {
     var el = document.getElementById('tap_'+id);
@@ -1121,6 +1394,7 @@ function showTab(name, btn) {
   
   if (name==='prochaine') { renderRappels(); renderVisites(); }
   if (name==='surveillance') renderSurveillance();
+  if (name==='sync') { renderSyncPanel(); renderSyncConfigInput(); }
 }
 
 // ═══════════════════════════════════════════
