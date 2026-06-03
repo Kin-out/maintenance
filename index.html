@@ -1239,16 +1239,16 @@ async function syncIfDue() {
 // Sync manuelle forcée (bouton dans le panel)
 async function syncNow() {
   const cfg = getSyncConfig();
-  if (!cfg.enabled || !cfg.scriptUrl) { notify('⚠️ Sync non configurée'); return; }
+  if (!cfg.enabled || !cfg.scriptUrl) { notify('\u26A0\uFE0F Sync non configur\u00E9e'); return; }
   localStorage.removeItem('gs_last_sync'); // Forcer le déclenchement
   await syncIfDue();
 }
 
 async function testSync() {
   const url = document.getElementById('syncUrlInput').value.trim();
-  if (!url) { notify('⚠️ Collez d'abord l'URL du script'); return; }
+  if (!url) { notify('URL manquante'); return; }
   const btn = document.getElementById('testSyncBtn');
-  btn.textContent = '⏳ Test…';
+  btn.textContent = 'Test en cours...';
   try {
     const resp = await fetch(url, {
       method: 'POST',
@@ -1257,12 +1257,12 @@ async function testSync() {
     });
     const json = await resp.json();
     if (json.status === 'ok') {
-      btn.textContent = '✅ Connexion OK';
+      btn.textContent = 'Connexion OK';
       btn.style.background = '#16a34a';
       document.getElementById('syncSaveBtn').disabled = false;
     } else throw new Error(json.message);
   } catch(e) {
-    btn.textContent = '❌ Échec';
+    btn.textContent = 'Echec';
     btn.style.background = '#dc2626';
     notify('Erreur : ' + e.message);
   }
@@ -1329,13 +1329,6 @@ function renderSyncConfigInput() {
   }
 }
 
-  const cfg = getSyncConfig();
-  const inp = document.getElementById('syncUrlInput');
-  if (inp && cfg.scriptUrl) {
-    inp.value = cfg.scriptUrl;
-    document.getElementById('syncSaveBtn').disabled = false;
-  }
-}
 
 
 document.addEventListener('DOMContentLoaded', () => {
