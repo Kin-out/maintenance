@@ -1728,9 +1728,9 @@ function sfStart(fieldId, btn) {
       // iOS coupe apres silence - relancer apres court delai
       setTimeout(() => {
         if (btn.classList.contains('listening') && !sfStopping) {
-          try { sfRecognition.start(); } catch(e) {}
+          try { sfRecognition.start(); } catch(e) { console.log('iOS restart failed:', e); }
         }
-      }, 150);
+      }, 500);
       return;
     }
     sfStopVu();
@@ -1769,10 +1769,13 @@ function sfStart(fieldId, btn) {
   };
 
   try {
-    sfStopVu(); // Stop any previous vumeter
+    sfStopVu();
+    console.log('Starting recognition for:', fieldId);
     sfRecognition.start();
+    console.log('Recognition started OK for:', fieldId);
     if (!/iPad|iPhone|iPod/.test(navigator.userAgent)) sfStartVu(fieldId);
   } catch(e) {
+    console.log('Recognition start FAILED for:', fieldId, e.message);
     btn.classList.remove('listening');
     btn.textContent = '🎙';
   }
@@ -1806,7 +1809,7 @@ function sfToggle(fieldId, btn) {
   sfStopVu();
   sfStopping = false;
   // Small delay on iOS to let previous recognition fully release
-  setTimeout(() => sfStart(fieldId, btn), 300);
+  setTimeout(() => sfStart(fieldId, btn), 800);
 }
 
 // OPTION C — sélection champ + bouton micro central
